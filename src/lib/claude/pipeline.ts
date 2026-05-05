@@ -1,10 +1,50 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { ZodSchema, ZodError } from 'zod'
+import {
+  AnalyseOutputSchema,
+  LernzielOutputSchema,
+  SpielOutputSchema,
+  ValidationOutputSchema,
+  DiagnoseOutputSchema,
+  type AnalyseOutput,
+  type LernzielOutput,
+  type SpielOutput,
+  type ValidationOutput,
+  type DiagnoseOutput,
+} from '../schemas/pipeline'
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 })
+
+// Fehlertypen für die Pipeline
+export class PipelineValidationError extends Error {
+  constructor(
+    public readonly schritt: string,
+    public readonly zodError: ZodError,
+    public readonly rawOutput: unknown
+  ) {
+    super(`Pipeline-Schritt "${schritt}" hat ungültiges JSON zurückgegeben: ${zodError.message}`)
+    this.name = 'PipelineValidationError'
+  }
+}
+
+export class PipelineJsonError extends Error {
+  constructor(public readonly schritt: string, public readonly rawText: string) {
+    super(`Pipeline-Schritt "${schritt}" hat kein JSON zurückgegeben`)
+    this.name = 'PipelineJsonError'
+  }
+}
+
+export class PipelineApiError extends Error {
+  constructor(public readonly schritt: string, cause: unknown) {
+    super(`Pipeline-Schritt "${schritt}" fehlgeschlagen`)
+    this.name = 'PipelineApiError'
+    this.cause = cause
+  }
+}
 
 // Lädt einen Prompt aus der prompts/-Datei
 function loadPrompt(filename: string): string {
@@ -12,22 +52,45 @@ function loadPrompt(filename: string): string {
   return readFileSync(promptPath, 'utf-8')
 }
 
-// Einzelner strukturierter KI-Call — gibt immer JSON zurück
-async function callClaude(systemPrompt: string, userMessage: string): Promise<unknown> {
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }],
-  })
+// JSON aus Claude-Antwort extrahieren
+function extractJson(text: string, schritt: string): unknown {
+  const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/(\{[\s\S]*\})/)
+  if (!jsonMatch) throw new PipelineJsonError(schritt, text)
+  try {
+    return JSON.parse(jsonMatch[1] || jsonMatch[0])
+  } catch {
+    throw new PipelineJsonError(schritt, text)
+  }
+}
+
+// Einzelner typisierter KI-Call mit Zod-Validierung
+async function callClaude<T>(
+  schritt: string,
+  systemPrompt: string,
+  userMessage: string,
+  schema: ZodSchema<T>
+): Promise<T> {
+  let response
+  try {
+    response = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+    })
+  } catch (err) {
+    throw new PipelineApiError(schritt, err)
+  }
 
   const text = response.content[0].type === 'text' ? response.content[0].text : ''
+  const raw = extractJson(text, schritt)
 
-  // JSON aus der Antwort extrahieren
-  const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/) || text.match(/(\{[\s\S]*\})/)
-  if (!jsonMatch) throw new Error('KI hat kein gültiges JSON zurückgegeben')
+  const result = schema.safeParse(raw)
+  if (!result.success) {
+    throw new PipelineValidationError(schritt, result.error, raw)
+  }
 
-  return JSON.parse(jsonMatch[1] || jsonMatch[0])
+  return result.data
 }
 
 // --- Schritt 1–6: Materialanalyse ---------------------------
@@ -35,63 +98,75 @@ export async function analyzeMaterial(input: {
   materialText: string
   abschnitte: { id: string; text: string }[]
   kontext: { fach: string; jahrgangsstufe: string; schulform: string; bundesland: string }
-}) {
-  const systemPrompt = loadPrompt('01_material_analysis.md')
-  const userMessage = JSON.stringify({
-    material_text: input.materialText,
-    material_abschnitte: input.abschnitte,
-    kontext: input.kontext,
-  })
-  return callClaude(systemPrompt, userMessage)
+}): Promise<AnalyseOutput> {
+  return callClaude(
+    'Materialanalyse (Schritte 1–6)',
+    loadPrompt('01_material_analysis.md'),
+    JSON.stringify({
+      material_text: input.materialText,
+      material_abschnitte: input.abschnitte,
+      kontext: input.kontext,
+    }),
+    AnalyseOutputSchema
+  )
 }
 
 // --- Schritt 7–10: Lernziel & Spielbarkeits-Ampel -----------
 export async function determineLearningObjective(input: {
-  analyse: unknown
+  analyse: AnalyseOutput
   lernzielLehrkraft?: string
-}) {
-  const systemPrompt = loadPrompt('02_learning_objective.md')
-  const userMessage = JSON.stringify({
-    analyse: input.analyse,
-    lernziel_lehrkraft: input.lernzielLehrkraft || null,
-  })
-  return callClaude(systemPrompt, userMessage)
+}): Promise<LernzielOutput> {
+  return callClaude(
+    'Lernziel & Spielbarkeit (Schritte 7–10)',
+    loadPrompt('02_learning_objective.md'),
+    JSON.stringify({
+      analyse: input.analyse,
+      lernziel_lehrkraft: input.lernzielLehrkraft ?? null,
+    }),
+    LernzielOutputSchema
+  )
 }
 
 // --- Schritt 11–16: Spielgenerierung -------------------------
 export async function generateGame(input: {
-  analyse: unknown
-  lernziel: unknown
+  analyse: AnalyseOutput
+  lernziel: LernzielOutput
   kontext: { jahrgangsstufe: string; fach: string; zeitrahmenMinuten: number }
-}) {
-  const systemPrompt = loadPrompt('03_game_generation.md')
-  const userMessage = JSON.stringify({
-    analyse: input.analyse,
-    lernziel: input.lernziel,
-    kontext: {
-      jahrgangsstufe: input.kontext.jahrgangsstufe,
-      fach: input.kontext.fach,
-      zeitrahmen_minuten: input.kontext.zeitrahmenMinuten,
-    },
-  })
-  return callClaude(systemPrompt, userMessage)
+}): Promise<SpielOutput> {
+  return callClaude(
+    'Spielgenerierung (Schritte 11–16)',
+    loadPrompt('03_game_generation.md'),
+    JSON.stringify({
+      analyse: input.analyse,
+      lernziel: input.lernziel,
+      kontext: {
+        jahrgangsstufe: input.kontext.jahrgangsstufe,
+        fach: input.kontext.fach,
+        zeitrahmen_minuten: input.kontext.zeitrahmenMinuten,
+      },
+    }),
+    SpielOutputSchema
+  )
 }
 
 // --- Schritt 17–21: Validierung & Lehrkraft-Check ------------
 export async function validateAndCheck(input: {
-  analyse: unknown
-  lernziel: unknown
-  spiel: unknown
+  analyse: AnalyseOutput
+  lernziel: LernzielOutput
+  spiel: SpielOutput
   abschnitte: { id: string; text: string }[]
-}) {
-  const systemPrompt = loadPrompt('04_validation_lehrkraft_check.md')
-  const userMessage = JSON.stringify({
-    analyse: input.analyse,
-    lernziel: input.lernziel,
-    spiel: input.spiel,
-    originalmaterial_abschnitte: input.abschnitte,
-  })
-  return callClaude(systemPrompt, userMessage)
+}): Promise<ValidationOutput> {
+  return callClaude(
+    'Validierung & Lehrkraft-Check (Schritte 17–21)',
+    loadPrompt('04_validation_lehrkraft_check.md'),
+    JSON.stringify({
+      analyse: input.analyse,
+      lernziel: input.lernziel,
+      spiel: input.spiel,
+      originalmaterial_abschnitte: input.abschnitte,
+    }),
+    ValidationOutputSchema
+  )
 }
 
 // --- Lernstandsdiagnose --------------------------------------
@@ -100,15 +175,18 @@ export async function runDiagnosis(input: {
   aufgabenMetadaten: unknown[]
   schuelerErgebnisse: unknown[]
   modus: 'kompakt' | 'detail'
-}) {
-  const systemPrompt = loadPrompt('05_diagnosis_engine.md')
-  const userMessage = JSON.stringify({
-    spiel_metadaten: input.spielMetadaten,
-    aufgaben_metadaten: input.aufgabenMetadaten,
-    schueler_ergebnisse: input.schuelerErgebnisse,
-    ausgabemodus: input.modus,
-  })
-  return callClaude(systemPrompt, userMessage)
+}): Promise<DiagnoseOutput> {
+  return callClaude(
+    'Lernstandsdiagnose',
+    loadPrompt('05_diagnosis_engine.md'),
+    JSON.stringify({
+      spiel_metadaten: input.spielMetadaten,
+      aufgaben_metadaten: input.aufgabenMetadaten,
+      schueler_ergebnisse: input.schuelerErgebnisse,
+      ausgabemodus: input.modus,
+    }),
+    DiagnoseOutputSchema
+  )
 }
 
 // --- Vollständige 21-Schritt-Pipeline ------------------------
@@ -123,7 +201,12 @@ export async function runFullPipeline(input: {
     zeitrahmenMinuten: number
   }
   lernzielLehrkraft?: string
-}) {
+}): Promise<{
+  analyse: AnalyseOutput
+  lernziel: LernzielOutput
+  spiel: SpielOutput
+  check: ValidationOutput
+}> {
   const analyse = await analyzeMaterial(input)
   const lernziel = await determineLearningObjective({ analyse, lernzielLehrkraft: input.lernzielLehrkraft })
   const spiel = await generateGame({ analyse, lernziel, kontext: input.kontext })

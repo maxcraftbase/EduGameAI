@@ -55,7 +55,7 @@ Nutze stattdessen:
       "wissensstruktur": "<z.B. Begriffswissen>",
       "denkhandlung": "<z.B. zuordnen/klassifizieren>",
       "komplexitaetsstufe": 2,
-      "differenzierungsniveau": "basis | standard | schwer",
+      "differenzierungsniveau": "leichter | mittel | schwer | sehr_schwer",
       "antwortformat": "<z.B. Zuordnung>",
       "richtige_loesungen": ["<Lösung>"],
       "teillösungen": ["<Teillösung>"],

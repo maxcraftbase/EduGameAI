@@ -52,7 +52,8 @@ export type Denkhandlung =
 
 export type Komplexitaetsstufe = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
-export type Differenzierungsniveau = 'basis' | 'standard' | 'schwer'
+// 4-stufige Skala: leichter / mittel / schwer / sehr_schwer
+export type Differenzierungsniveau = 'leichter' | 'mittel' | 'schwer' | 'sehr_schwer'
 
 export type Antwortformat =
   | 'single_choice'
@@ -86,6 +87,22 @@ export type Ursprung = 'original' | 'ki_ergaenzung' | 'didaktisch_reduziert'
 export type LernzielStatus = 'erreicht' | 'teilweise_erreicht' | 'noch_nicht_gesichert'
 
 export type Ampelfarbe = 'gruen' | 'gelb' | 'rot'
+
+// Didaktische Spieltypen (Game-Engines nach Passung, nicht Attraktivität)
+export type GameEngine =
+  | 'wissensabruf'
+  | 'zuordnung_ordnung'
+  | 'prozess_ablauf'
+  | 'erklaerung_zusammenhang'
+  | 'anwendung_fall'
+  | 'fehlerbasiert'
+  | 'modell_darstellung'
+  | 'sprach_produktion'
+  | 'argumentation_urteil'
+  | 'reflexion_strategie'
+
+// Visuelle Spieloberfläche je Altersstufe
+export type GameSkin = 'unterstufe' | 'mittelstufe' | 'oberstufe'
 
 // --- Core Data Models ----------------------------------------
 
@@ -140,6 +157,12 @@ export interface Analyse {
   }
 }
 
+interface DifferenzierungsStufe {
+  text_variante: string | null
+  hilfen: string[]
+  distraktoren: string[]
+}
+
 export interface Aufgabe {
   id: string
   spiel_id: string
@@ -152,9 +175,10 @@ export interface Aufgabe {
   teilkompetenz: string
   komplexitaetsstufe: Komplexitaetsstufe
   differenzierungen: {
-    basis: { text_variante: string | null; hilfen: string[]; distraktoren: string[] }
-    standard: { text_variante: string | null; hilfen: string[]; distraktoren: string[] }
-    schwer: { text_variante: string | null; hilfen: string[]; distraktoren: string[] }
+    leichter: DifferenzierungsStufe
+    mittel: DifferenzierungsStufe
+    schwer: DifferenzierungsStufe
+    sehr_schwer: DifferenzierungsStufe
   }
   fehlvorstellungen: {
     fehler: string
@@ -174,8 +198,8 @@ export interface Spiel {
   lehrer_id: string
   titel: string
   spieltyp_didaktisch: string
-  game_engine: string
-  game_skin: string
+  game_engine: GameEngine
+  game_skin: GameSkin
   aufgaben: Aufgabe[]
   zeitregelung_sekunden: number | null
   zeitdruck_aktiv: boolean
@@ -247,35 +271,60 @@ export interface Klasse {
   erstellt_am: string
 }
 
+// KLP — Kerncurriculum / Lehrplan-Konfiguration
+export interface KLP {
+  bundesland: string
+  schulform: string
+  jahrgangsstufe: string
+  fach: string
+  kompetenzbereiche: string[]
+}
+
 // --- Diagnosis Types -----------------------------------------
 
 export interface DiagnoseKompakt {
   auswertung_id: string
   sitzungs_id: string
+  ausgabemodus: 'kompakt' | 'detail'
   klassenueberblick: {
     anzahl_codes: number
+    lernpfad_abgeschlossen: number
     lernziel_erreicht: number
     lernziel_teilweise: number
     lernziel_noch_nicht_gesichert: number
     gesamteinschaetzung: string
+    lernziel_original: string
+    lernziel_mvp_variante: string | null
     abdeckungshinweis: string
   }
-  kompetenzampel: { teilkompetenz: string; status: Ampelfarbe; einschaetzung: string }[]
+  kompetenzampel_klasse: { teilkompetenz: string; status: Ampelfarbe; einschaetzung: string }[]
   haeufige_fehlvorstellungen: {
     fehlvorstellung: string
     haeufigkeit: number
+    betroffene_aufgaben: string[]
     empfehlung: string
   }[]
-  empfehlungen: {
+  empfehlungen_weiterarbeit: {
     plenum: string[]
     vertiefung: string[]
     erweiterung: string[]
+    exit_ticket_vorschlag: string | null
   }
+  foerdergruppen: {
+    gruppe: string
+    beschreibung: string
+    codes: string[]
+    empfehlung: string
+  }[]
   individuelle_diagnosen: {
     code: string
     lernzielstatus: LernzielStatus
+    lernpfad_abgeschlossen: boolean
     sichere_teilkompetenzen: string[]
     unsichere_teilkompetenzen: string[]
+    fehlvorstellungen: string[]
+    hilfenutzung: 'selbststaendig' | 'mit_hilfe' | 'trotz_hilfe_unsicher'
+    erreichte_komplexitaetsstufe: number
     empfehlung: string
   }[]
   sus_rueckmeldungen: {
@@ -285,4 +334,39 @@ export interface DiagnoseKompakt {
     noch_ueben: string[]
     naechster_schritt: string
   }[]
+  daten_hinweise: string[]
+  pdf_export: {
+    lehrkraft_pdf_bereit: boolean
+    sus_pdfs_bereit: boolean
+    anzahl_sus_pdfs: number
+  }
+}
+
+export interface DiagnoseDetail extends DiagnoseKompakt {
+  kompetenzmatrix: {
+    teilkompetenz: string
+    codes_sicher: string[]
+    codes_teilweise: string[]
+    codes_unsicher: string[]
+  }[]
+  hilfenutzungsanalyse: {
+    selbststaendig: number
+    mit_hilfe: number
+    trotz_hilfe_unsicher: number
+    auswertung: string
+  }
+  komplexitaetsanalyse: {
+    stufe: number
+    bezeichnung: string
+    anteil_erreicht: number
+    einschaetzung: string
+  }[]
+  fehlvorstellungsanalyse: {
+    fehlvorstellung: string
+    aufgaben: string[]
+    codes: string[]
+    empfehlung: string
+  }[]
+  lernpfad_verlaufsanalyse: string
+  unterrichtsimpulse: string[]
 }

@@ -92,21 +92,26 @@ Pro Aufgabe:
 
 ### Schritt 15: Differenzierung erzeugen
 
-Erstelle pro Aufgabe 3 Differenzierungsniveaus:
+Erstelle pro Aufgabe 4 Differenzierungsniveaus:
 
-**Leichter (Basis):**
+**Leichter:**
 - Mehr Hilfen, weniger Auswahlmöglichkeiten
 - Klarere Struktur, stärkere Führung
 - Offensichtlichere Distraktoren
 
-**Standard (Mitte):**
+**Mittel:**
 - Teilweise Hilfen, strukturierte Aufgaben
 - Mittelschwere Distraktoren
 
-**Schwer (Erweiterung):**
+**Schwer:**
 - Weniger Hilfen, mehr Eigenständigkeit
 - Anspruchsvolle Distraktoren
 - Höhere Komplexität (Transfer, Fehleranalyse)
+
+**Sehr schwer:**
+- Keine Hilfen
+- Hochkomplexe Distraktoren (nahe an der richtigen Antwort)
+- Transfer auf neue Situation, Fehleranalyse, Modellkritik oder Erweiterung
 
 ### Schritt 16: Typische Fehler und Fehlvorstellungen einbauen
 
@@ -160,12 +165,12 @@ Anforderungen an Distraktoren:
   "schritt_15_differenzierung": [
     {
       "aufgabe_id": "Q1",
-      "basis": {
+      "leichter": {
         "aufgabentext_variante": "<vereinfachte Version>",
-        "hilfen": ["<Hilfe 1>"],
+        "hilfen": ["<Hilfe 1>", "<Hilfe 2>"],
         "distraktoren": ["<offensichtlicherer Distraktor>"]
       },
-      "standard": {
+      "mittel": {
         "aufgabentext_variante": null,
         "hilfen": ["<optionale Hilfe>"],
         "distraktoren": ["<mittelschwerer Distraktor>"]
@@ -174,6 +179,11 @@ Anforderungen an Distraktoren:
         "aufgabentext_variante": "<schwierigere Version>",
         "hilfen": [],
         "distraktoren": ["<anspruchsvoller Distraktor>"]
+      },
+      "sehr_schwer": {
+        "aufgabentext_variante": "<Transfer- oder Fehleranalyse-Version>",
+        "hilfen": [],
+        "distraktoren": ["<hochkomplexer Distraktor nahe an der richtigen Antwort>"]
       }
     }
   ],
