@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>EduGame AI – Gefiederpflege Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#6C3BF5;--pd:#4E27C4;--g:#22C55E;--r:#EF4444;--y:#FACC15;--o:#F97316;--b:#3B82F6;
+--bg:#09090B;--bg2:#111115;--bg3:#18181C;--bd:rgba(255,255,255,.08);--t:#FAFAFA;--m:#A1A1AA;--rr:14px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 26px;border-bottom:1px solid var(--bd);background:rgba(9,9,11,.93);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+.logo{font-weight:900;font-size:1.1rem;background:linear-gradient(135deg,#A78BFA,#6C3BF5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.demo-pill{background:rgba(108,59,245,.2);border:1px solid rgba(108,59,245,.4);color:#A78BFA;padding:4px 12px;border-radius:100px;font-size:.75rem;font-weight:700}
+.back-link{color:var(--m);font-size:.83rem;text-decoration:none;padding:6px 13px;border:1px solid var(--bd);border-radius:8px;transition:all .15s}
+.back-link:hover{color:var(--t);border-color:rgba(255,255,255,.2)}
+/* HUB */
+#hub{max-width:1060px;margin:0 auto;padding:52px 22px 80px}
+.hub-lbl{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--p);margin-bottom:10px}
+.hub-h{font-size:clamp(1.7rem,4vw,2.7rem);font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.hub-sub{margin-top:9px;color:var(--m);font-size:.97rem;max-width:500px}
+.src-badge{display:inline-flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--bd);padding:8px 17px;border-radius:10px;font-size:.81rem;margin-top:20px;margin-bottom:22px}
+.src-badge .lbl{color:var(--m)}.src-badge .val{font-weight:700}
+/* PDF */
+.pdf-section{margin-bottom:38px}
+.pdf-toggle{display:flex;align-items:center;gap:10px;cursor:pointer;padding:11px 15px;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;font-size:.84rem;font-weight:600;user-select:none;transition:border-color .15s}
+.pdf-toggle:hover{border-color:rgba(108,59,245,.4)}
+.pdf-ti{transition:transform .2s;font-size:.9rem}.pdf-toggle.open .pdf-ti{transform:rotate(90deg)}
+.pdf-preview{display:none;margin-top:10px;border-radius:12px;border:1px solid var(--bd);overflow:hidden}
+.pdf-preview.open{display:block}
+.pdf-chrome{background:#2d2d30;padding:9px 15px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.pdf-dot{width:10px;height:10px;border-radius:50%}
+.pdf-chrome-title{font-size:.76rem;color:#888;margin-left:4px}
+.pdf-doc{background:#fff;color:#1a1a1a;padding:44px;font-family:'Times New Roman',serif;line-height:1.72;font-size:.87rem;max-height:500px;overflow-y:auto}
+.pdf-doc h1{font-size:1.35rem;font-weight:700;text-align:center;margin-bottom:5px;color:#111}
+.pdf-doc .pdf-meta{text-align:center;color:#888;font-size:.74rem;margin-bottom:24px;padding-bottom:14px;border-bottom:2px solid #111}
+.pdf-doc h2{font-size:1rem;font-weight:700;margin:22px 0 7px;color:#111;border-left:3px solid #6C3BF5;padding-left:9px}
+.pdf-doc p{margin-bottom:9px;color:#2a2a2a}
+.pdf-doc table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.81rem}
+.pdf-doc td,.pdf-doc th{border:1px solid #ccc;padding:7px 10px}
+.pdf-doc th{background:#f0f0f0;font-weight:700;text-align:left}
+.pdf-doc .hl{background:#fffde7;border-left:3px solid #f59e0b;padding:10px 14px;margin:13px 0;border-radius:0 6px 6px 0;font-size:.81rem}
+.pdf-ai-bar{background:linear-gradient(135deg,rgba(108,59,245,.12),rgba(96,165,250,.08));border-top:1px solid rgba(108,59,245,.25);padding:13px 19px;display:flex;align-items:flex-start;gap:12px}
+.pdf-ai-bar .aii{font-size:1.3rem}
+.pdf-ai-bar .ait{font-size:.81rem;color:var(--m)}.pdf-ai-bar .ait strong{color:var(--t)}
+.pdf-ai-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.pdf-ai-chip{background:rgba(108,59,245,.15);border:1px solid rgba(108,59,245,.3);color:#A78BFA;padding:2px 9px;border-radius:100px;font-size:.69rem;font-weight:700}
+/* GAME CARDS */
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:14px}
+.hcard{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:24px 19px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.hcard:hover{border-color:var(--cc,rgba(108,59,245,.5));transform:translateY(-4px)}
+.hcard:hover .play-btn{background:var(--cc,var(--p));border-color:var(--cc,var(--p))}
+.hcard-icon{font-size:1.9rem;margin-bottom:11px;display:block}
+.hcard-name{font-size:.93rem;font-weight:800;margin-bottom:5px}
+.hcard-desc{font-size:.77rem;color:var(--m);line-height:1.5;margin-bottom:9px;min-height:46px}
+.hcard-tag{display:inline-block;padding:3px 9px;border-radius:100px;font-size:.67rem;font-weight:700;margin-bottom:13px}
+.play-btn{display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:8px;padding:8px;font-size:.8rem;font-weight:700;transition:all .15s}
+/* GAME CONTAINER */
+#gc{display:none;flex-direction:column;min-height:calc(100vh - 56px)}
+#gc.on{display:flex}
+.ghdr{display:flex;align-items:center;gap:13px;padding:13px 22px;border-bottom:1px solid var(--bd);background:var(--bg2)}
+.back-btn{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:7px 13px;color:var(--t);font-size:.81rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.back-btn:hover{border-color:rgba(255,255,255,.25)}
+.ghdr-name{font-weight:800;font-size:.93rem}.ghdr-topic{font-size:.77rem;color:var(--m)}
+.garea{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px}
+.gpanel{display:none;width:100%;max-width:860px}.gpanel.on{display:block}
+/* SHARED */
+.inst{text-align:center;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:38px 30px;max-width:450px;margin:0 auto}
+.inst-icon{font-size:2.6rem;margin-bottom:13px}.inst h3{font-size:1.2rem;font-weight:800;margin-bottom:9px}
+.inst p{color:var(--m);font-size:.87rem;line-height:1.65;margin-bottom:17px}
+.inst-hints{background:var(--bg2);border-radius:8px;padding:11px 15px;margin-bottom:18px;text-align:left;display:flex;flex-direction:column;gap:5px;font-size:.79rem;color:var(--m)}
+.inst-hints span::before{content:"→ "}
+.start-btn{background:var(--p);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:.93rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.start-btn:hover{background:var(--pd)}
+.result{text-align:center;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:38px 30px;max-width:400px;margin:0 auto}
+.res-icon{font-size:2.9rem;margin-bottom:13px}.res-title{font-size:1.35rem;font-weight:900;margin-bottom:5px}
+.res-sub{color:var(--m);font-size:.87rem;margin-bottom:4px}
+.res-score{font-size:2.2rem;font-weight:900;letter-spacing:-.03em;background:linear-gradient(135deg,#A78BFA,#6C3BF5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:13px 0}
+.res-btns{display:flex;gap:10px;justify-content:center;margin-top:17px;flex-wrap:wrap}
+.retry-btn{background:var(--p);color:#fff;border:none;border-radius:10px;padding:10px 21px;font-size:.87rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.retry-btn:hover{background:var(--pd)}
+.hub-btn{background:transparent;color:var(--t);border:1px solid var(--bd);border-radius:10px;padding:10px 21px;font-size:.87rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.hub-btn:hover{border-color:rgba(255,255,255,.25);background:var(--bg2)}
+
+/* ── HANGMAN ── */
+.hm-wrap{display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start}
+@media(max-width:600px){.hm-wrap{grid-template-columns:1fr}}
+#hm-canvas{background:var(--bg3);border:1px solid var(--bd);border-radius:12px;display:block}
+.hm-right{display:flex;flex-direction:column;gap:16px}
+.hm-hint{background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:13px 16px;font-size:.84rem;color:var(--m)}
+.hm-hint strong{color:var(--t)}
+.hm-word{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:16px}
+.hm-letter{font-size:1.5rem;font-weight:800;border-bottom:3px solid var(--t);min-width:24px;text-align:center;line-height:1.6;letter-spacing:2px}
+.hm-lives{display:flex;gap:6px;align-items:center;font-size:.83rem;color:var(--m)}
+.hm-kb{display:flex;flex-direction:column;gap:5px}
+.hm-kb-row{display:flex;gap:5px;justify-content:center}
+.hm-key{background:var(--bg3);border:1px solid var(--bd);border-radius:7px;padding:8px 10px;font-size:.82rem;font-weight:700;cursor:pointer;min-width:34px;text-align:center;font-family:inherit;color:var(--t);transition:all .15s}
+.hm-key:hover:not(:disabled){border-color:rgba(108,59,245,.5);background:rgba(108,59,245,.1)}
+.hm-key.ok{background:rgba(34,197,94,.2);border-color:var(--g);color:#4ADE80}
+.hm-key.bad{background:rgba(239,68,68,.15);border-color:var(--r);color:#F87171}
+.hm-key:disabled{cursor:default;opacity:.5}
+.hm-word-sel{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:7px 14px;font-size:.8rem;color:var(--m);text-align:center}
+.hm-word-sel b{color:var(--t)}
+
+/* ── WWM ── */
+.wwm-wrap{display:grid;grid-template-columns:1fr 180px;gap:20px}
+@media(max-width:680px){.wwm-wrap{grid-template-columns:1fr}}
+.wwm-main{display:flex;flex-direction:column;gap:14px}
+.wwm-jokers{display:flex;gap:9px;flex-wrap:wrap}
+.wwm-joker{background:var(--bg3);border:2px solid var(--bd);border-radius:10px;padding:9px 16px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;color:var(--t);transition:all .15s;display:flex;align-items:center;gap:7px}
+.wwm-joker:hover:not(:disabled){border-color:var(--y);color:var(--y)}
+.wwm-joker:disabled{opacity:.35;cursor:default}
+.wwm-joker.used{opacity:.3;cursor:default;text-decoration:line-through}
+.wwm-q{background:linear-gradient(135deg,#0d1b4b,#0a1232);border:1px solid rgba(96,130,250,.3);border-radius:var(--rr);padding:22px 24px;font-size:1rem;font-weight:700;text-align:center;line-height:1.5;color:#e8eeff;min-height:80px;display:flex;align-items:center;justify-content:center}
+.wwm-answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wwm-ans{background:linear-gradient(135deg,#0e1e52,#0a1540);border:2px solid rgba(96,130,250,.3);border-radius:11px;padding:13px 16px;font-size:.87rem;font-weight:600;cursor:pointer;font-family:inherit;color:#c8d8ff;text-align:left;transition:all .15s;display:flex;align-items:center;gap:10px}
+.wwm-ans:hover:not(:disabled){border-color:#6082fa;background:linear-gradient(135deg,#162358,#0f1b4a)}
+.wwm-ans.sel{border-color:var(--o);background:linear-gradient(135deg,#3a1a00,#2a1400);color:var(--o)}
+.wwm-ans.ok{border-color:var(--g);background:rgba(34,197,94,.15);color:#4ADE80}
+.wwm-ans.bad{border-color:var(--r);background:rgba(239,68,68,.15);color:#F87171}
+.wwm-ans:disabled{cursor:default}
+.wwm-ans .albl{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0}
+.wwm-confirm{display:none;width:100%;padding:13px;background:var(--o);color:#fff;border:none;border-radius:11px;font-size:.93rem;font-weight:800;cursor:pointer;font-family:inherit;transition:background .15s;animation:pulse .8s ease infinite alternate}
+.wwm-confirm:hover{background:#ea6500}
+@keyframes pulse{from{box-shadow:0 0 0 rgba(249,115,22,0)}to{box-shadow:0 0 18px rgba(249,115,22,.5)}}
+.wwm-ladder{display:flex;flex-direction:column-reverse;gap:3px}
+.wwm-rung{padding:6px 12px;border-radius:7px;font-size:.75rem;font-weight:700;text-align:right;border:1px solid transparent;transition:all .2s}
+.wwm-rung.active{background:rgba(250,204,21,.15);border-color:var(--y);color:var(--y)}
+.wwm-rung.done{color:#4ADE80;opacity:.7}
+.wwm-rung.normal{color:var(--m)}
+.wwm-rung.checkpoint{color:#60A5FA;font-weight:800}
+/* audience poll */
+.poll-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:200}
+.poll-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:28px;max-width:400px;width:90%;text-align:center}
+.poll-title{font-weight:800;font-size:1rem;margin-bottom:20px}
+.poll-bars{display:flex;gap:12px;align-items:flex-end;height:110px;justify-content:center}
+.poll-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1}
+.poll-bar-fill{width:100%;border-radius:4px 4px 0 0;background:var(--p);min-height:4px;transition:height .6s ease}
+.poll-bar-pct{font-size:.72rem;font-weight:700;color:var(--m)}
+.poll-bar-lbl{font-size:.78rem;font-weight:800}
+.poll-close{margin-top:18px;background:var(--p);color:#fff;border:none;border-radius:9px;padding:10px 24px;font-size:.87rem;font-weight:700;cursor:pointer;font-family:inherit}
+/* phone joker */
+.phone-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:200}
+.phone-box{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:28px;max-width:400px;width:90%}
+.phone-title{font-weight:800;font-size:1rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.phone-msg{background:var(--bg2);border-radius:10px;padding:14px 16px;font-size:.87rem;line-height:1.6;color:var(--m);margin-bottom:16px;border-left:3px solid var(--g)}
+.phone-msg strong{color:var(--t)}
+.phone-close{background:var(--g);color:#fff;border:none;border-radius:9px;padding:10px 24px;font-size:.87rem;font-weight:700;cursor:pointer;font-family:inherit;width:100%}
+
+/* ── SPACE SHOOTER ── */
+.sh-hud{display:flex;gap:11px;margin-bottom:9px;flex-wrap:wrap}
+.hud-chip{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:6px 13px;font-size:.81rem;font-weight:600}
+.hud-chip span{color:var(--m);margin-right:4px;font-weight:400}
+.sh-q{background:var(--bg3);border:1px solid rgba(108,59,245,.35);border-radius:10px;padding:10px 17px;margin-bottom:9px;font-size:.9rem;font-weight:600;text-align:center}
+.sh-q em{color:#A78BFA;font-style:normal}
+#sh-canvas{display:block;width:100%;border-radius:var(--rr);border:1px solid var(--bd);cursor:crosshair}
+.sh-shoot-btn{display:none;width:100%;margin-top:12px;background:linear-gradient(135deg,#F97316,#EF4444);color:#fff;border:none;border-radius:14px;padding:18px;font-size:1.4rem;font-weight:900;cursor:pointer;font-family:inherit;letter-spacing:.05em;-webkit-tap-highlight-color:transparent;transition:transform .08s,opacity .08s;box-shadow:0 4px 24px rgba(239,68,68,.35)}
+.sh-shoot-btn:active{transform:scale(.95);opacity:.85}
+.sh-hint{display:none;text-align:center;font-size:.78rem;color:var(--m);margin-top:8px}
+/* Legacy touch-row hidden – replaced by shoot button */
+.touch-row{display:none !important}
+
+/* ── MEMORY ── */
+.mem-stats{display:flex;gap:11px;margin-bottom:16px;flex-wrap:wrap}
+.mem-stat{background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:6px 13px;font-size:.81rem;font-weight:600}
+.mem-stat span{color:var(--m);margin-right:4px;font-weight:400}
+.mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mc{aspect-ratio:1.5;perspective:900px;cursor:pointer}
+.mc-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .36s cubic-bezier(.4,0,.2,1);border-radius:10px}
+.mc.fl .mc-inner,.mc.mt .mc-inner{transform:rotateY(180deg)}
+.mc-f,.mc-b{position:absolute;inset:0;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:6px;text-align:center;font-size:.73rem;font-weight:600;backface-visibility:hidden;-webkit-backface-visibility:hidden;line-height:1.3}
+.mc-f{background:var(--bg3);border:1px solid var(--bd);font-size:1.25rem}
+.mc-b{background:var(--bg2);border:1px solid rgba(108,59,245,.3);transform:rotateY(180deg)}
+.mc.mt .mc-b{background:rgba(34,197,94,.1);border-color:var(--g);color:#4ADE80}
+@keyframes wf{0%,100%{border-color:rgba(108,59,245,.3)}50%{border-color:var(--r);background:rgba(239,68,68,.14)}}
+.mc.wm .mc-b{animation:wf .4s ease}
+
+/* ── RICHTIG/FALSCH ── */
+.rf-hud{display:flex;gap:11px;margin-bottom:16px;flex-wrap:wrap}
+.rf-timer-bar{height:7px;background:var(--bg3);border-radius:100px;overflow:hidden;margin-bottom:20px}
+.rf-timer-fill{height:100%;background:linear-gradient(90deg,var(--g),var(--y),var(--r));border-radius:100px;transition:width .1s linear}
+.rf-stmt{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:22px 24px;font-size:1rem;font-weight:700;text-align:center;min-height:90px;display:flex;align-items:center;justify-content:center;line-height:1.5;margin-bottom:18px}
+.rf-stmt.flash-ok{animation:flashOk .4s ease}
+.rf-stmt.flash-bad{animation:flashBad .4s ease}
+@keyframes flashOk{0%,100%{background:var(--bg3)}50%{background:rgba(34,197,94,.2)}}
+@keyframes flashBad{0%,100%{background:var(--bg3)}50%{background:rgba(239,68,68,.2)}}
+.rf-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rf-btn{padding:16px;font-size:1.1rem;font-weight:800;border:2px solid var(--bd);border-radius:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.rf-btn.ok{background:rgba(34,197,94,.1);color:#4ADE80;border-color:var(--g)}
+.rf-btn.ok:hover{background:rgba(34,197,94,.22)}
+.rf-btn.bad{background:rgba(239,68,68,.1);color:#F87171;border-color:var(--r)}
+.rf-btn.bad:hover{background:rgba(239,68,68,.22)}
+.rf-btn:disabled{cursor:default;opacity:.5}
+.rf-feedback{text-align:center;margin-top:12px;font-size:.84rem;font-weight:600;min-height:22px}
+.rf-progress{display:flex;gap:4px;margin-bottom:14px;justify-content:center}
+.rf-dot{width:10px;height:10px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);transition:all .2s}
+.rf-dot.ok{background:var(--g);border-color:var(--g)}
+.rf-dot.bad{background:var(--r);border-color:var(--r)}
+.rf-dot.cur{border-color:var(--p)}
+@media(max-width:600px){.wwm-answers{grid-template-columns:1fr}.mem-grid{grid-template-columns:repeat(3,1fr)}}
+
+/* ── iPAD / TOUCH OPTIMIERUNGEN ── */
+/* Alle Buttons: schnelle Tap-Reaktion, kein Double-Tap-Zoom */
+button,a,.hcard,.mc,.pdf-toggle{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+canvas{touch-action:none}
+
+/* Mindest-Tapgröße 44px auf allen interaktiven Elementen */
+.start-btn,.retry-btn,.hub-btn,.back-btn,.wwm-confirm,.poll-close,.phone-close{min-height:48px}
+.wwm-joker{min-height:44px;padding:11px 18px}
+.wwm-ans{min-height:56px}
+.rf-btn{min-height:64px;font-size:1.15rem}
+.play-btn{min-height:44px}
+.back-link{min-height:44px;display:flex;align-items:center}
+.wwm-confirm{font-size:1rem;min-height:52px}
+
+/* Hangman-Tastatur: iPad-taugliche Tapflächen */
+.hm-key{min-width:42px;min-height:46px;padding:11px 10px;font-size:.9rem}
+.hm-kb-row{gap:6px}
+.hm-kb{gap:7px}
+
+/* Aktiv-States für Touch-Feedback (kein Hover nötig) */
+.hm-key:active:not(:disabled){background:rgba(108,59,245,.35);border-color:var(--p)}
+.wwm-ans:active:not(:disabled){border-color:#A78BFA;background:linear-gradient(135deg,#1a2560,#111a4a)}
+.wwm-joker:active:not(:disabled){border-color:var(--y);color:var(--y)}
+.rf-btn.ok:active{background:rgba(34,197,94,.3)}
+.rf-btn.bad:active{background:rgba(239,68,68,.3)}
+.mc:active .mc-inner{transform:scale(.96) rotateY(0deg)}
+.mc.fl:active .mc-inner,.mc.mt:active .mc-inner{transform:scale(.96) rotateY(180deg)}
+.hcard:active{transform:translateY(-2px);border-color:var(--cc,rgba(108,59,245,.5))}
+.start-btn:active{background:var(--pd)}
+.retry-btn:active{background:var(--pd)}
+.t-btn{min-height:56px;min-width:72px;font-size:1.3rem;padding:14px 28px}
+
+/* Touch-Controls Space Shooter immer sichtbar auf Touch-Geräten */
+.touch-row{gap:14px}
+@media(hover:none),(pointer:coarse){.touch-row{display:flex !important}}
+
+/* WWM-Layout auf iPad (Portrait) */
+@media(max-width:820px){
+  .wwm-wrap{grid-template-columns:1fr}
+  .wwm-ladder{flex-direction:row;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:12px}
+  .wwm-rung{padding:5px 10px;font-size:.72rem}
+}
+/* Hangman-Layout auf kleinen Tablets */
+@media(max-width:680px){
+  .hm-wrap{grid-template-columns:1fr}
+  #hm-canvas{max-width:200px;margin:0 auto}
+}
+/* Noch kleinere Phones */
+@media(max-width:400px){.hm-key{min-width:34px;min-height:42px;padding:9px 6px;font-size:.78rem}}
+
+/* ── LERNFLOW ── */
+.flow-section{margin-top:52px;padding-top:42px;border-top:1px solid var(--bd)}
+.flow-phases-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0 28px}
+@media(max-width:640px){.flow-phases-preview{grid-template-columns:1fr}}
+.fpc{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:20px 18px;position:relative;overflow:hidden}
+.fpc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.fpc.e1::before{background:linear-gradient(90deg,#F97316,#FACC15)}
+.fpc.e2::before{background:linear-gradient(90deg,#6C3BF5,#60A5FA)}
+.fpc.e3::before{background:linear-gradient(90deg,#22C55E,#6C3BF5)}
+.fpc-phase{font-size:.67rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.fpc.e1 .fpc-phase{color:#F97316}.fpc.e2 .fpc-phase{color:#60A5FA}.fpc.e3 .fpc-phase{color:#22C55E}
+.fpc-name{font-size:.95rem;font-weight:800;margin-bottom:5px}
+.fpc-desc{font-size:.77rem;color:var(--m);line-height:1.5}
+.fpc-game{display:inline-flex;align-items:center;gap:5px;margin-top:10px;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:100px;padding:4px 10px;font-size:.72rem;font-weight:700}
+.flow-start-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:420px;margin:0 auto;background:linear-gradient(135deg,#6C3BF5,#4E27C4);color:#fff;border:none;border-radius:14px;padding:16px 28px;font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 24px rgba(108,59,245,.35);touch-action:manipulation}
+.flow-start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(108,59,245,.45)}
+.flow-start-btn:active{transform:translateY(0)}
+.flow-duration{text-align:center;font-size:.77rem;color:var(--m);margin-top:10px}
+/* Flow view */
+#fv{display:none;flex-direction:column;min-height:calc(100vh - 56px)}
+#fv.on{display:flex}
+.fv-hdr{display:flex;align-items:center;gap:13px;padding:13px 22px;border-bottom:1px solid var(--bd);background:var(--bg2);flex-wrap:wrap;gap:10px}
+.fv-progress{flex:1;display:flex;align-items:center;gap:0;min-width:180px}
+.fv-step{display:flex;align-items:center;gap:5px;font-size:.76rem;font-weight:700;padding:5px 11px;border-radius:100px;transition:all .25s;white-space:nowrap}
+.fv-step.done{color:#4ADE80}.fv-step.active{background:rgba(108,59,245,.2);color:#A78BFA;border:1px solid rgba(108,59,245,.4)}.fv-step.future{color:var(--m)}
+.fv-line{flex:1;height:1px;background:var(--bd);max-width:32px;min-width:8px}
+.fv-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 22px;overflow-y:auto}
+.fv-panel{display:none;width:100%;max-width:760px}.fv-panel.on{display:block}
+/* Phase headers */
+.ph-lbl{font-size:.67rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;text-align:center}
+.ph-h{font-size:clamp(1.3rem,3vw,1.9rem);font-weight:900;text-align:center;margin-bottom:6px}
+.ph-sub{color:var(--m);font-size:.87rem;text-align:center;margin-bottom:24px;line-height:1.6}
+/* Hypothesis */
+.hyp-counter{text-align:center;font-size:.77rem;color:var(--m);margin-bottom:12px}
+.hyp-q{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:22px 24px;font-size:1rem;font-weight:700;text-align:center;margin-bottom:16px;line-height:1.5}
+.hyp-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+@media(max-width:500px){.hyp-opts{grid-template-columns:1fr}}
+.hyp-opt{background:var(--bg3);border:2px solid var(--bd);border-radius:11px;padding:13px 16px;font-size:.87rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--t);text-align:left;transition:all .15s;min-height:52px;touch-action:manipulation}
+.hyp-opt:hover:not(:disabled){border-color:rgba(108,59,245,.5);background:rgba(108,59,245,.08)}
+.hyp-opt.sel{border-color:var(--p);background:rgba(108,59,245,.15);color:#A78BFA}
+.hyp-opt.reveal-ok{border-color:var(--g);background:rgba(34,197,94,.12);color:#4ADE80}
+.hyp-opt.reveal-bad{border-color:var(--bd);opacity:.4}
+.hyp-reveal{background:var(--bg2);border:1px solid rgba(34,197,94,.3);border-left:3px solid var(--g);border-radius:10px;padding:13px 16px;font-size:.85rem;color:#4ADE80;margin-bottom:16px;line-height:1.55;display:none}
+/* Feather explorer */
+.fex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.fex-card{aspect-ratio:1.25;perspective:800px;cursor:pointer;touch-action:manipulation}
+.fex-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .4s cubic-bezier(.4,0,.2,1);border-radius:12px}
+.fex-card.flipped .fex-inner{transform:rotateY(180deg)}
+.fex-front,.fex-back{position:absolute;inset:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;text-align:center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.fex-front{background:var(--bg3);border:1px solid rgba(108,59,245,.4);gap:8px;font-size:1.7rem}
+.fex-front span{font-size:.8rem;font-weight:700;color:#A78BFA}
+.fex-back{background:rgba(108,59,245,.12);border:1px solid rgba(108,59,245,.5);transform:rotateY(180deg);font-size:.76rem;font-weight:600;line-height:1.45;color:var(--t)}
+.fex-back .fex-func{color:#A78BFA;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.fex-progress-bar{height:6px;background:var(--bg3);border-radius:100px;overflow:hidden;margin-bottom:10px}
+.fex-progress-fill{height:100%;background:linear-gradient(90deg,var(--p),#60A5FA);border-radius:100px;transition:width .4s ease}
+/* Mini Memory */
+.fmem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:16px}
+@media(max-width:480px){.fmem-grid{grid-template-columns:repeat(3,1fr)}}
+.fmc{aspect-ratio:1.4;perspective:700px;cursor:pointer;touch-action:manipulation}
+.fmc-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .32s;border-radius:9px}
+.fmc.fl .fmc-inner,.fmc.mt .fmc-inner{transform:rotateY(180deg)}
+.fmc-f,.fmc-b{position:absolute;inset:0;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:6px;text-align:center;font-size:.71rem;font-weight:600;backface-visibility:hidden;-webkit-backface-visibility:hidden;line-height:1.3}
+.fmc-f{background:var(--bg3);border:1px solid var(--bd);font-size:1.1rem}
+.fmc-b{background:var(--bg2);border:1px solid rgba(108,59,245,.3);transform:rotateY(180deg)}
+.fmc.mt .fmc-b{background:rgba(34,197,94,.1);border-color:var(--g);color:#4ADE80}
+@keyframes fwf{0%,100%{border-color:rgba(108,59,245,.3)}50%{border-color:var(--r);background:rgba(239,68,68,.12)}}
+.fmc.wm .fmc-b{animation:fwf .4s ease}
+/* Boss fight */
+.boss-wrap{display:flex;flex-direction:column;gap:14px}
+.boss-arena{background:linear-gradient(135deg,#0a0420,#0d0629);border:1px solid rgba(108,59,245,.3);border-radius:var(--rr);padding:18px;text-align:center}
+.boss-name{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#A78BFA;margin-bottom:6px}
+.boss-emoji{font-size:3.2rem;line-height:1;margin-bottom:8px}
+.boss-emoji.hit{animation:bossHit .3s ease}
+@keyframes bossHit{0%{transform:scale(1)}30%{transform:scale(1.2) rotate(-8deg)}60%{transform:scale(.9) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+.boss-hp-bar{height:13px;background:rgba(255,255,255,.08);border-radius:100px;overflow:hidden;margin-bottom:5px}
+.boss-hp-fill{height:100%;border-radius:100px;transition:width .5s ease;background:linear-gradient(90deg,#22C55E,#84CC16)}
+.boss-hp-fill.mid{background:linear-gradient(90deg,#FACC15,#F97316)}
+.boss-hp-fill.low{background:linear-gradient(90deg,#EF4444,#DC2626)}
+.boss-hp-txt{font-size:.71rem;color:var(--m);margin-bottom:3px}
+.boss-lives{display:flex;gap:5px;justify-content:center;font-size:1.1rem;margin-top:4px}
+.boss-qnum{text-align:right;font-size:.75rem;color:var(--m)}
+.boss-q{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rr);padding:18px 20px;font-size:.95rem;font-weight:700;text-align:center;line-height:1.5;min-height:68px;display:flex;align-items:center;justify-content:center}
+.boss-opts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@media(max-width:500px){.boss-opts{grid-template-columns:1fr}}
+.boss-opt{background:rgba(255,255,255,.04);border:2px solid var(--bd);border-radius:10px;padding:12px 14px;font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--t);text-align:left;transition:all .15s;display:flex;align-items:center;gap:9px;min-height:52px;touch-action:manipulation}
+.boss-opt:hover:not(:disabled){border-color:rgba(108,59,245,.5);background:rgba(108,59,245,.08)}
+.boss-opt.ok{border-color:var(--g);background:rgba(34,197,94,.12);color:#4ADE80}
+.boss-opt.bad{border-color:var(--r);background:rgba(239,68,68,.12);color:#F87171}
+.boss-opt:disabled{cursor:default}
+.boss-olbl{width:23px;height:23px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;font-size:.71rem;font-weight:800;flex-shrink:0}
+.boss-fb{text-align:center;font-size:.84rem;font-weight:600;min-height:20px;margin-top:2px}
+/* Phase transitions */
+.phase-transition{text-align:center;max-width:420px;margin:0 auto}
+.pt-phase-done{font-size:3rem;margin-bottom:12px}
+.pt-h{font-size:1.3rem;font-weight:900;margin-bottom:8px}
+.pt-sub{color:var(--m);font-size:.87rem;margin-bottom:8px;line-height:1.6}
+.pt-score{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,#A78BFA,#6C3BF5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:12px 0}
+.pt-next{font-size:.78rem;color:var(--m);margin-bottom:20px;padding:11px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--bd)}
+.continue-btn{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:12px;padding:14px 32px;font-size:.95rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 20px rgba(108,59,245,.3);touch-action:manipulation}
+.continue-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(108,59,245,.4)}
+.continue-btn:active{transform:translateY(0)}
+/* Flow result */
+.flow-result{text-align:center;max-width:460px;margin:0 auto}
+.flow-res-stars{font-size:2.5rem;margin-bottom:12px;letter-spacing:4px}
+.flow-res-h{font-size:1.5rem;font-weight:900;margin-bottom:6px}
+.flow-res-sub{color:var(--m);font-size:.87rem;margin-bottom:20px}
+.flow-tag{display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#4ADE80;padding:3px 12px;border-radius:100px;font-size:.72rem;font-weight:700;margin-bottom:14px}
+.flow-res-breakdown{display:flex;flex-direction:column;gap:7px;margin-bottom:22px;background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:16px 20px;text-align:left}
+.flow-res-row{display:flex;align-items:center;justify-content:space-between;font-size:.83rem}
+.flow-res-row .lbl{color:var(--m)}.flow-res-row .val{font-weight:700;color:#A78BFA}
+.flow-res-total{display:flex;align-items:center;justify-content:space-between;font-size:1rem;font-weight:900;margin-top:8px;padding-top:10px;border-top:1px solid var(--bd)}
+.flow-res-total .val{background:linear-gradient(135deg,#A78BFA,#6C3BF5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.35rem}
+
+/* Open text hypothesis */
+.hyp-textarea{width:100%;background:var(--bg2);border:2px solid var(--bd);border-radius:12px;padding:14px 16px;font-size:.9rem;font-family:'Inter',sans-serif;color:var(--t);resize:vertical;min-height:90px;outline:none;transition:border-color .2s,box-shadow .2s;line-height:1.6;touch-action:manipulation}
+.hyp-textarea:focus{border-color:rgba(108,59,245,.6);box-shadow:0 0 0 3px rgba(108,59,245,.1)}
+.hyp-chars{font-size:.74rem;color:var(--m);text-align:right;margin-top:5px;margin-bottom:12px;transition:color .2s}
+.hyp-chars.ready{color:#4ADE80;font-weight:600}
+.hyp-kw-wrap{background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.hyp-kw-title{font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+.hyp-kw-tags{display:flex;flex-wrap:wrap;gap:6px}
+.hyp-kw{padding:3px 10px;border-radius:100px;font-size:.72rem;font-weight:700;transition:all .2s}
+.hyp-kw.found{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#4ADE80}
+.hyp-kw.miss{background:rgba(255,255,255,.04);border:1px solid var(--bd);color:var(--m);opacity:.6}
+.hyp-scene{border-radius:14px;overflow:hidden;margin-bottom:16px;position:relative;background:var(--bg3)}
+.hyp-scene img{width:100%;max-height:200px;object-fit:cover;display:block}
+.hyp-scene-caption{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));padding:8px 12px;font-size:.74rem;color:rgba(255,255,255,.85);font-weight:600}
+.hyp-scene-fallback{background:linear-gradient(135deg,#060d2e,#0d1a3a);padding:32px 20px;text-align:center;border-radius:14px;margin-bottom:16px}
+/* SVG Explorer */
+.fex-diagram-wrap{display:flex;gap:20px;align-items:flex-start}
+@media(max-width:620px){.fex-diagram-wrap{flex-direction:column;align-items:stretch}}
+.fex-svg-container{flex-shrink:0;width:240px}
+@media(max-width:620px){.fex-svg-container{width:100%;max-width:260px;margin:0 auto}}
+.hs-marker{cursor:pointer;transition:transform .12s;transform-box:fill-box;transform-origin:center}
+.hs-marker:hover{transform:scale(1.18)}
+.hs-marker.visited{filter:brightness(.6)}
+.hotspot-info{flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:14px;padding:20px;min-height:180px;display:flex;flex-direction:column;justify-content:center;transition:border-color .25s}
+.hotspot-info.empty{align-items:center;text-align:center;border-style:dashed;color:var(--m);font-size:.84rem;gap:8px}
+.hi-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#fff;flex-shrink:0}
+.hi-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hi-icon{font-size:1.8rem}
+.hi-title{display:flex;flex-direction:column;gap:3px}
+.hi-name{font-size:1.05rem;font-weight:800}
+.hi-func{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:2px 8px;border-radius:100px}
+.hi-desc{font-size:.84rem;line-height:1.65;color:var(--m)}
+.hi-desc strong{color:var(--t);font-weight:700}
+.fex-visited-strip{display:flex;gap:7px;margin-bottom:14px;align-items:center}
+.fex-visited-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;border:2px solid var(--bd);color:var(--m);transition:all .25s;cursor:pointer}
+.fex-visited-dot.done{color:#fff;border-color:transparent}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.hi-animate{animation:fadeIn .2s ease}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">EduGame AI</div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="demo-pill">Demo</div>
+    <a href="index.html" class="back-link">← Startseite</a>
+  </div>
+</div>
+
+<div id="hub">
+  <div style="margin-bottom:38px">
+    <div class="hub-lbl">Spieledemo</div>
+    <h1 class="hub-h">Wähl ein Spiel und leg los</h1>
+    <p class="hub-sub">5 Spieltypen – alle generiert aus echtem Unterrichtsmaterial einer 6. Klasse.</p>
+    <div class="src-badge">
+      <span class="lbl">📄</span>
+      <span class="val">AB – Wieso putzen sich Vögel?.pdf</span>
+      <span style="color:var(--bd)">·</span>
+      <span class="val">NaWi · Klasse 6</span>
+    </div>
+  </div>
+
+  <div class="pdf-section">
+    <div class="pdf-toggle" id="pdfToggle" onclick="togglePdf()">
+      <div style="display:flex;align-items:center;gap:9px;flex:1">
+        <span>📄</span><span>AB – Wieso putzen sich Vögel?.pdf</span>
+        <span style="color:var(--m);font-weight:400;font-size:.75rem">· 2 Seiten · NaWi 6c</span>
+      </div>
+      <span style="color:var(--m);font-size:.77rem;font-weight:400" id="pdf-toggle-txt">Quellmaterial anzeigen</span>
+      <span class="pdf-ti">▶</span>
+    </div>
+    <div class="pdf-preview" id="pdfPreview">
+      <div class="pdf-chrome">
+        <div class="pdf-dot" style="background:#ff5f57"></div>
+        <div class="pdf-dot" style="background:#febc2e"></div>
+        <div class="pdf-dot" style="background:#28c840"></div>
+        <span class="pdf-chrome-title">AB – Wieso putzen sich Vögel?.pdf</span>
+      </div>
+      <div class="pdf-doc">
+        <h1>Wieso putzen sich Vögel?</h1>
+        <div class="pdf-meta">NaWi 6c · UL/KI · 25.11.25</div>
+        <h2>1. Lies den folgenden Text</h2>
+        <p>Eine Feder besitzt einen festen <strong>Schaft</strong>, von dem viele feine <strong>Federäste</strong> ausgehen. An diesen Federästen sitzen winzige <strong>Häkchen</strong>, die sich wie kleine Verbindungen ineinander einhaken können. Wenn der Vogel sein Gefieder putzt, streicht er mit dem Schnabel über die Feder und richtet die Federäste und Häkchen wieder aus, sodass sie sich sauber miteinander verbinden. Auf diese Weise entsteht eine geschlossene und glatte Federfläche.</p>
+        <p>Diese glatte Fläche ist für den Flug von großer Bedeutung. Beim Schlagen der Flügel kann die Luft gleichmäßig über die Federn hinwegströmen. Dadurch entsteht ein stabiler <strong>Luftstrom</strong>, der den <strong>Auftrieb</strong> unterstützt und dem Vogel hilft, sich in der Luft zu halten und zu manövrieren. Je geordneter die Federäste ineinandergreifen, desto besser kann die Feder diese Aufgabe erfüllen.</p>
+        <p>Beim Putzen verteilt der Vogel außerdem ein feines Öl, das aus der <strong>Bürzeldrüse</strong> am Schwanzansatz stammt. Dieses Öl legt sich wie ein dünner Film über die Federoberfläche und sorgt dafür, dass Wasser und Schmutz leichter abperlen. So bleibt die Federoberfläche glatt, sauber und funktionsfähig – auch bei Regen oder beim Schwimmen.</p>
+        <h2>2. Verbinde Struktur mit Funktion</h2>
+        <table>
+          <tr><th>Struktur</th><th>Funktion / Wirkung</th></tr>
+          <tr><td>Die Häkchen</td><td>verbinden Federäste</td></tr>
+          <tr><td>Gefieder putzen</td><td>richtet Federäste und Häkchen neu aus</td></tr>
+          <tr><td>Ungeordnete Federäste</td><td>stören den Luftstrom</td></tr>
+          <tr><td>Das Bürzeldrüsen-Öl</td><td>lässt Wasser und Schmutz abperlen</td></tr>
+          <tr><td>Schaft + Federäste</td><td>geben der Feder Halt</td></tr>
+          <tr><td>Eine glatte Federfläche</td><td>unterstützt Auftrieb</td></tr>
+        </table>
+        <div class="hl">📚 <strong>Lernziel:</strong> Die SuS beschreiben den Aufbau einer Vogelfeder und erklären, wie Gefiederpflege die Flugfähigkeit und Schutzfunktion unterstützt.</div>
+      </div>
+      <div class="pdf-ai-bar">
+        <div class="aii">🤖</div>
+        <div>
+          <div class="ait"><strong>KI-Analyse abgeschlossen</strong> – 5 Spielmodule automatisch generiert</div>
+          <div class="pdf-ai-chips">
+            <span class="pdf-ai-chip">🔤 Hangman</span>
+            <span class="pdf-ai-chip">💰 Wer wird Millionär</span>
+            <span class="pdf-ai-chip">🚀 Space Shooter</span>
+            <span class="pdf-ai-chip">🧩 Memory Matrix</span>
+            <span class="pdf-ai-chip">⚡ Richtig oder Falsch</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hub-grid" id="hubGrid"></div>
+
+  <!-- LERNFLOW -->
+  <div class="flow-section">
+    <div class="hub-lbl">Vollständiger Lernpfad</div>
+    <h2 class="hub-h" style="font-size:clamp(1.4rem,3vw,2.1rem)">Erlebe den kompletten Unterricht</h2>
+    <p class="hub-sub" style="max-width:560px">Einstieg → Erarbeitung → Sicherung — genau wie im echten Schulunterricht, nur mit echten Spielen statt Arbeitsblättern.</p>
+    <div class="flow-phases-preview">
+      <div class="fpc e1">
+        <div class="fpc-phase">① Einstieg · ~2 Min</div>
+        <div class="fpc-name">Was weißt du schon?</div>
+        <div class="fpc-desc">Stelle Hypothesen auf — kein Druck, einfach tippen was du denkst.</div>
+        <div class="fpc-game">❓ Hypothesen-Quiz</div>
+      </div>
+      <div class="fpc e2">
+        <div class="fpc-phase">② Erarbeitung · ~4 Min</div>
+        <div class="fpc-name">Entdecke die Vogelfeder</div>
+        <div class="fpc-desc">Erkunde den Aufbau interaktiv, dann festige die Begriffe mit Memory.</div>
+        <div class="fpc-game">🪶 Explorer + 🧩 Memory</div>
+      </div>
+      <div class="fpc e3">
+        <div class="fpc-phase">③ Sicherung · ~2 Min</div>
+        <div class="fpc-name">Besiege den Prüfungs-Adler</div>
+        <div class="fpc-desc">Beantworte 5 Fragen und bezwinge den Boss mit deinem neuen Wissen.</div>
+        <div class="fpc-game">🦅 Boss Fight</div>
+      </div>
+    </div>
+    <button class="flow-start-btn" onclick="startFlow()">🎮 Lernflow starten — ca. 8 Min</button>
+    <div class="flow-duration">Einstieg 2 Min &nbsp;·&nbsp; Erarbeitung 4 Min &nbsp;·&nbsp; Sicherung 2 Min</div>
+  </div>
+</div>
+
+<div id="fv">
+  <div class="fv-hdr">
+    <button class="back-btn" onclick="exitFlow()">← Abbrechen</button>
+    <div class="fv-progress">
+      <div class="fv-step active" id="fvs0">❓ Einstieg</div>
+      <div class="fv-line"></div>
+      <div class="fv-step future" id="fvs1">🪶 Erarbeitung</div>
+      <div class="fv-line"></div>
+      <div class="fv-step future" id="fvs2">🦅 Sicherung</div>
+    </div>
+  </div>
+  <div class="fv-body">
+    <div class="fv-panel" id="fvp-einstieg"></div>
+    <div class="fv-panel" id="fvp-t1"></div>
+    <div class="fv-panel" id="fvp-explorer"></div>
+    <div class="fv-panel" id="fvp-fmemory"></div>
+    <div class="fv-panel" id="fvp-hangman"></div>
+    <div class="fv-panel" id="fvp-t2"></div>
+    <div class="fv-panel" id="fvp-boss"></div>
+    <div class="fv-panel" id="fvp-result"></div>
+  </div>
+</div>
+
+<div id="gc">
+  <div class="ghdr">
+    <button class="back-btn" onclick="showHub()">← Alle Spiele</button>
+    <div><div class="ghdr-name" id="ghdr-name">–</div><div class="ghdr-topic">NaWi · Gefiederpflege · Klasse 6</div></div>
+  </div>
+  <div class="garea">
+    <div class="gpanel" id="p-hangman"></div>
+    <div class="gpanel" id="p-wwm"></div>
+    <div class="gpanel" id="p-shooter"></div>
+    <div class="gpanel" id="p-memory"></div>
+    <div class="gpanel" id="p-rf"></div>
+  </div>
+</div>
+
+<script>
+const GAMES=[
+  {id:'hangman',icon:'🔤',name:'Hangman',desc:'Errate Begriffe zum Vogelgefieder – bevor das Strichmännchen hängt!',tag:'Üben',tc:'#4ADE80',cc:'#22C55E'},
+  {id:'wwm',    icon:'💰',name:'Wer wird Millionär?',desc:'10 Fragen, 3 Joker, bis zu 16.000 € – alles über Gefiederpflege.',tag:'Quiz',tc:'#FDE047',cc:'#FACC15'},
+  {id:'shooter',icon:'🚀',name:'Space Shooter',desc:'Schieß die richtigen Antworten ab – unter Zeitdruck!',tag:'Üben',tc:'#60A5FA',cc:'#3B82F6'},
+  {id:'memory', icon:'🧩',name:'Memory Matrix',desc:'Finde alle Struktur-Funktions-Paare der Vogelfeder.',tag:'Üben',tc:'#C084FC',cc:'#A78BFA'},
+  {id:'rf',     icon:'⚡',name:'Richtig oder Falsch',desc:'Blitzrunde: 12 Aussagen – richtig oder falsch? Schnell entscheiden!',tag:'Üben',tc:'#FCA5A5',cc:'#F97316'},
+];
+
+(function buildHub(){
+  const g=document.getElementById('hubGrid');
+  GAMES.forEach(({id,icon,name,desc,tag,tc,cc})=>{
+    const d=document.createElement('div');d.className='hcard';d.style.setProperty('--cc',cc);
+    d.innerHTML=`<span class="hcard-icon">${icon}</span><div class="hcard-name">${name}</div><div class="hcard-desc">${desc}</div><div class="hcard-tag" style="background:${tc}22;color:${tc}">${tag}</div><div class="play-btn">▶ Spielen</div>`;
+    d.onclick=()=>openGame(id,name);g.appendChild(d);
+  });
+})();
+
+function togglePdf(){
+  const t=document.getElementById('pdfToggle'),p=document.getElementById('pdfPreview');
+  const open=p.classList.toggle('open');t.classList.toggle('open',open);
+  document.getElementById('pdf-toggle-txt').textContent=open?'Ausblenden':'Quellmaterial anzeigen';
+}
+function showHub(){document.getElementById('hub').style.display='';document.getElementById('gc').classList.remove('on');stopAll();}
+function openGame(id,name){
+  document.getElementById('hub').style.display='none';document.getElementById('gc').classList.add('on');
+  document.getElementById('ghdr-name').textContent=name;
+  document.querySelectorAll('.gpanel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  stopAll();
+  ({hangman:initHangman,wwm:initWWM,shooter:initShooter,memory:initMemory,rf:initRF})[id]();
+}
+function stopAll(){
+  if(window._raf){cancelAnimationFrame(window._raf);window._raf=null;}
+  if(window._memT){clearInterval(window._memT);window._memT=null;}
+  if(window._rfT){clearInterval(window._rfT);window._rfT=null;}
+  document.removeEventListener('keydown',window._kd);
+  document.removeEventListener('keyup',window._ku);
+}
+
+/* ══════════════════════════════════════════════════
+   HANGMAN
+══════════════════════════════════════════════════ */
+const HM_WORDS=[
+  {word:'SCHAFT',hint:'Der feste, stabile Mittelteil einer Vogelfeder'},
+  {word:'HÄKCHEN',hint:'Winzige Verbindungselemente an den Federästen'},
+  {word:'FEDERÄSTE',hint:'Zweigen vom Schaft ab und tragen die Häkchen'},
+  {word:'BÜRZELDRÜSE',hint:'Produziert das Pflegeöl am Schwanzansatz des Vogels'},
+  {word:'AUFTRIEB',hint:'Wird durch eine glatte Federfläche beim Fliegen unterstützt'},
+  {word:'LUFTSTROM',hint:'Wird von ungeordneten Federästen gestört'},
+  {word:'GEFIEDER',hint:'Das gesamte Federkleid eines Vogels'},
+];
+const KB=[['Q','W','E','R','T','Z','U','I','O','P','Ü'],['A','S','D','F','G','H','J','K','L','Ö','Ä'],['Y','X','C','V','B','N','M']];
+let HM={};
+
+function initHangman(){
+  const p=document.getElementById('p-hangman');
+  p.innerHTML=`<div id="hm-inst" class="inst">
+    <div class="inst-icon">🔤</div><h3>Hangman</h3>
+    <p>Errate den Fachbegriff Buchstabe für Buchstabe. Bei <b>6 Fehlern</b> hängt das Strichmännchen!</p>
+    <div class="inst-hints"><span>Klicke auf Buchstaben oder benutze die Tastatur</span><span>Es gibt ${HM_WORDS.length} Wörter zum Erraten</span></div>
+    <button class="start-btn" onclick="runHangman()">Spielen →</button>
+  </div>
+  <div id="hm-game" style="display:none"></div>
+  <div id="hm-res" style="display:none"></div>`;
+}
+
+function runHangman(){
+  document.getElementById('hm-inst').style.display='none';
+  document.getElementById('hm-game').style.display='block';
+  const shuffled=[...HM_WORDS].sort(()=>Math.random()-.5);
+  HM={words:shuffled,idx:0,wrong:0,guessed:new Set(),score:0,maxWrong:6};
+  renderHangman();
+  document.addEventListener('keydown',hmKeyHandler);
+}
+
+function hmKeyHandler(e){
+  const k=e.key.toUpperCase();
+  if(/^[A-ZÄÖÜ]$/.test(k)&&k.length===1) guessLetter(k);
+}
+
+function renderHangman(){
+  const {words,idx,wrong,guessed,maxWrong}=HM;
+  const word=words[idx].word;
+  const hint=words[idx].hint;
+  const el=document.getElementById('hm-game');
+  el.innerHTML=`
+    <div class="hm-word-sel"><b>Wort ${idx+1} von ${words.length}</b> · Fehler: ${wrong}/${maxWrong}</div>
+    <div class="hm-wrap" style="margin-top:16px">
+      <canvas id="hm-canvas" width="200" height="240"></canvas>
+      <div class="hm-right">
+        <div class="hm-hint"><b>Hinweis:</b> ${hint}</div>
+        <div class="hm-word">${word.split('').map(l=>`<div class="hm-letter">${guessed.has(l)?l:'&nbsp;'}</div>`).join('')}</div>
+        <div class="hm-kb">${KB.map(row=>`<div class="hm-kb-row">${row.map(l=>{
+          const state=guessed.has(l)?(word.includes(l)?'ok':'bad'):'';
+          return `<button class="hm-key ${state}" ${guessed.has(l)?'disabled':''} onclick="guessLetter('${l}')">${l}</button>`;
+        }).join('')}</div>`).join('')}</div>
+      </div>
+    </div>`;
+  drawHangman(wrong,maxWrong);
+}
+
+function drawHangman(wrong,maxWrong){
+  const cv=document.getElementById('hm-canvas');if(!cv)return;
+  const cx=cv.getContext('2d');const W=cv.width,H=cv.height;
+  cx.clearRect(0,0,W,H);
+  cx.strokeStyle='#FAFAFA';cx.lineWidth=3;cx.lineCap='round';cx.lineJoin='round';
+  // gallows
+  cx.beginPath();
+  cx.moveTo(15,H-8);cx.lineTo(W-15,H-8); // base
+  cx.moveTo(45,H-8);cx.lineTo(45,15); // pole
+  cx.moveTo(45,15);cx.lineTo(140,15); // beam
+  cx.moveTo(140,15);cx.lineTo(140,45); // rope
+  cx.stroke();
+  const cx2=140,hy=65,by1=88,by2=148;
+  if(wrong>=1){cx.beginPath();cx.arc(cx2,hy,20,0,Math.PI*2);cx.stroke();} // head
+  if(wrong>=2){cx.beginPath();cx.moveTo(cx2,by1);cx.lineTo(cx2,by2);cx.stroke();} // body
+  if(wrong>=3){cx.beginPath();cx.moveTo(cx2,by1+14);cx.lineTo(cx2-28,by1+38);cx.stroke();} // l arm
+  if(wrong>=4){cx.beginPath();cx.moveTo(cx2,by1+14);cx.lineTo(cx2+28,by1+38);cx.stroke();} // r arm
+  if(wrong>=5){cx.beginPath();cx.moveTo(cx2,by2);cx.lineTo(cx2-22,by2+32);cx.stroke();} // l leg
+  if(wrong>=6){ // r leg + dead face
+    cx.beginPath();cx.moveTo(cx2,by2);cx.lineTo(cx2+22,by2+32);cx.stroke();
+    cx.strokeStyle='#EF4444';
+    // X eyes
+    [[cx2-8,hy-7],[cx2+8,hy-7]].forEach(([ex,ey])=>{
+      cx.beginPath();cx.moveTo(ex-4,ey-4);cx.lineTo(ex+4,ey+4);cx.stroke();
+      cx.beginPath();cx.moveTo(ex+4,ey-4);cx.lineTo(ex-4,ey+4);cx.stroke();
+    });
+    // sad mouth
+    cx.beginPath();cx.arc(cx2,hy+10,7,0,Math.PI,true);cx.stroke();
+  }
+}
+
+function guessLetter(l){
+  if(HM.guessed.has(l))return;
+  HM.guessed.add(l);
+  const word=HM.words[HM.idx].word;
+  if(!word.includes(l)){HM.wrong++;if(HM.wrong>=HM.maxWrong){setTimeout(()=>endWordHangman(false),200);renderHangman();return;}}
+  const won=word.split('').every(c=>HM.guessed.has(c));
+  if(won){HM.score++;setTimeout(()=>endWordHangman(true),300);}
+  renderHangman();
+}
+
+function endWordHangman(won){
+  const word=HM.words[HM.idx].word;
+  if(!won){
+    // reveal word and end game
+    HM.guessed=new Set(word.split(''));renderHangman();
+    setTimeout(()=>endHangman(),1200);return;
+  }
+  HM.idx++;
+  if(HM.idx>=HM.words.length){endHangman();return;}
+  HM.wrong=0;HM.guessed=new Set();renderHangman();
+}
+
+function endHangman(){
+  document.removeEventListener('keydown',hmKeyHandler);
+  document.getElementById('hm-game').style.display='none';
+  const r=document.getElementById('hm-res');r.style.display='block';
+  const pct=Math.round(HM.score/HM.words.length*100);
+  r.innerHTML=`<div class="result">
+    <div class="res-icon">${pct>=80?'🎉':pct>=50?'👍':'💀'}</div>
+    <div class="res-title">${pct>=80?'Ausgezeichnet!':pct>=50?'Gut gemacht!':'Weiter üben!'}</div>
+    <div class="res-sub">${HM.score} von ${HM.words.length} Wörtern erraten</div>
+    <div class="res-score">${pct}%</div>
+    <div class="res-btns">
+      <button class="retry-btn" onclick="openGame('hangman','Hangman')">↺ Nochmal</button>
+      <button class="hub-btn" onclick="showHub()">Alle Spiele</button>
+    </div></div>`;
+}
+
+/* ══════════════════════════════════════════════════
+   WER WIRD MILLIONÄR
+══════════════════════════════════════════════════ */
+const WWM_QS=[
+  {q:'Womit putzt ein Vogel sein Gefieder?',opts:['Mit den Krallen','Mit dem Schnabel','Mit den Flügeln','Mit der Zunge'],c:1,poll:[8,78,10,4],tel:'Ich bin sicher: B – der Schnabel! Das weiß ich aus dem Biologieunterricht.'},
+  {q:'Wie heißt der feste Mittelteil einer Vogelfeder?',opts:['Federast','Häkchen','Schaft','Kiel'],c:2,poll:[5,9,82,4],tel:'C, der Schaft! Da bin ich mir ziemlich sicher – das war Thema in der Schule.'},
+  {q:'Was sitzen an den Federästen einer Vogelfeder?',opts:['Schuppen','Drüsen','Häkchen','Fasern'],c:2,poll:[7,11,71,11],tel:'Ich glaube Häkchen – C. Bin etwa 80 % sicher!'},
+  {q:'Was entsteht, wenn Federäste ordentlich ineinandergreifen?',opts:['Ein Hohlraum','Wärme','Eine glatte Federfläche','Bürzelöl'],c:2,poll:[6,13,72,9],tel:'C – eine glatte Federfläche. Das macht aerodynamisch Sinn!'},
+  {q:'Woher stammt das Öl, das Vögel beim Putzen verteilen?',opts:['Schnabeldrüse','Brustdrüse','Bürzeldrüse','Schweißdrüse'],c:2,poll:[12,8,69,11],tel:'Bürzeldrüse – C. Am Schwanzansatz. Das hab ich irgendwo gelesen!'},
+  {q:'Was bewirkt das Bürzeldrüsen-Öl auf der Feder?',opts:['Feder wächst schneller','Wasser perlt ab','Federäste verbinden sich','Feder wird schwerer'],c:1,poll:[5,76,12,7],tel:'B – Wasser perlt ab! Wie bei einer imprägnierten Regenjacke.'},
+  {q:'Was unterstützt eine glatte Federfläche beim Fliegen?',opts:['Die Körperwärme','Die Geschwindigkeit','Den Auftrieb','Die Tarnung'],c:2,poll:[4,11,74,11],tel:'C – den Auftrieb. Das macht physikalisch absolut Sinn.'},
+  {q:'Was passiert, wenn Federäste ungeordnet sind?',opts:['Auftrieb steigt','Der Luftstrom wird gestört','Feder wird länger','Öl verteilt sich besser'],c:1,poll:[8,73,10,9],tel:'B... der Luftstrom wird gestört. Klingt logisch für mich!'},
+  {q:'Welche Funktion haben die Häkchen an den Federästen?',opts:['Wärme speichern','Wasser sammeln','Federäste verbinden','Den Schaft stützen'],c:2,poll:[7,6,79,8],tel:'C – Federäste verbinden! Die haken sich aneinander wie Klettverschluss.'},
+  {q:'Was ist das übergeordnete Ziel der Gefiederpflege?',opts:['Attraktiver aussehen','Federn wachsen lassen','Flugfähigkeit und Schutz erhalten','Wärme speichern'],c:2,poll:[5,8,82,5],tel:'C – Flugfähigkeit und Schutz erhalten. Das ist eindeutig die Hauptfunktion!'},
+];
+const WWM_AMT=['50 €','100 €','200 €','300 €','500 €','1.000 €','2.000 €','4.000 €','8.000 €','16.000 €'];
+const WWM_CHECK=[4,9];
+let W={};
+
+function initWWM(){
+  document.getElementById('p-wwm').innerHTML=`<div id="wm-inst" class="inst">
+    <div class="inst-icon">💰</div><h3>Wer wird Millionär?</h3>
+    <p>10 Fragen über Gefiederpflege – von 50 € bis 16.000 €. Du hast <b>3 Joker</b>!</p>
+    <div class="inst-hints"><span>Antwort anklicken → "Endgültige Antwort" bestätigen</span><span>50:50 · Publikum · Telefon-Joker verfügbar</span><span>Checkpoints: 500 € und 16.000 €</span></div>
+    <button class="start-btn" onclick="runWWM()">Spielen →</button>
+  </div>
+  <div id="wm-game" style="display:none"></div>
+  <div id="wm-res" style="display:none"></div>`;
+}
+
+function runWWM(){
+  document.getElementById('wm-inst').style.display='none';
+  document.getElementById('wm-game').style.display='block';
+  W={q:0,sel:-1,jokers:{half:false,pub:false,tel:false},done:false};
+  renderWWM();
+}
+
+function renderWWM(){
+  const q=WWM_QS[W.q];
+  const el=document.getElementById('wm-game');
+  el.innerHTML=`<div class="wwm-wrap">
+    <div class="wwm-main">
+      <div class="wwm-jokers">
+        <button class="wwm-joker${W.jokers.half?' used':''}" id="j-half" onclick="useJoker('half')" ${W.jokers.half?'disabled':''}>50:50</button>
+        <button class="wwm-joker${W.jokers.pub?' used':''}" id="j-pub" onclick="useJoker('pub')" ${W.jokers.pub?'disabled':''}>📊 Publikum</button>
+        <button class="wwm-joker${W.jokers.tel?' used':''}" id="j-tel" onclick="useJoker('tel')" ${W.jokers.tel?'disabled':''}>📞 Telefon</button>
+      </div>
+      <div class="wwm-q">${q.q}</div>
+      <div class="wwm-answers" id="wm-ans">
+        ${q.opts.map((o,i)=>`<button class="wwm-ans" id="wa-${i}" onclick="selectWWM(${i})"><span class="albl">${['A','B','C','D'][i]}</span>${o}</button>`).join('')}
+      </div>
+      <button class="wwm-confirm" id="wm-confirm" onclick="confirmWWM()">✓ Endgültige Antwort</button>
+    </div>
+    <div>
+      <div class="wwm-ladder">
+        ${WWM_AMT.map((a,i)=>{
+          const cls=i===W.q?'active':i<W.q?'done':WWM_CHECK.includes(i)?'checkpoint':'normal';
+          return `<div class="wwm-rung ${cls}">${WWM_CHECK.includes(i)?'⭐ ':''} ${a}</div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function selectWWM(i){
+  if(W.done)return;
+  W.sel=i;
+  document.querySelectorAll('.wwm-ans').forEach((b,j)=>{b.classList.toggle('sel',j===i)});
+  document.getElementById('wm-confirm').style.display='block';
+}
+
+function confirmWWM(){
+  if(W.sel<0||W.done)return;
+  W.done=true;
+  const q=WWM_QS[W.q];
+  document.querySelectorAll('.wwm-ans').forEach(b=>b.disabled=true);
+  document.getElementById('wm-confirm').style.display='none';
+  const ok=W.sel===q.c;
+  document.getElementById('wa-'+W.sel).classList.add(ok?'ok':'bad');
+  if(!ok) document.getElementById('wa-'+q.c).classList.add('ok');
+  setTimeout(()=>{
+    W.q++;W.sel=-1;W.done=false;
+    if(!ok||W.q>=WWM_QS.length){endWWM(ok,W.q-1);}
+    else{renderWWM();}
+  },1600);
+}
+
+function useJoker(type){
+  if(W.jokers[type])return;
+  W.jokers[type]=true;
+  document.getElementById('j-'+type).classList.add('used');
+  const q=WWM_QS[W.q];
+  if(type==='half'){
+    const wrong=[0,1,2,3].filter(i=>i!==q.c);
+    const remove=wrong.sort(()=>Math.random()-.5).slice(0,2);
+    remove.forEach(i=>{const b=document.getElementById('wa-'+i);b.style.visibility='hidden';});
+  }
+  if(type==='pub'){
+    const overlay=document.createElement('div');overlay.className='poll-overlay';
+    const bars=q.poll.map((p,i)=>`<div class="poll-bar-wrap"><div class="poll-bar-fill" style="height:${p}%"></div><div class="poll-bar-pct">${p}%</div><div class="poll-bar-lbl">${['A','B','C','D'][i]}</div></div>`).join('');
+    overlay.innerHTML=`<div class="poll-box"><div class="poll-title">📊 Publikumsjoker</div><div class="poll-bars">${bars}</div><button class="poll-close" onclick="this.closest('.poll-overlay').remove()">OK</button></div>`;
+    document.body.appendChild(overlay);
+  }
+  if(type==='tel'){
+    const overlay=document.createElement('div');overlay.className='phone-overlay';
+    overlay.innerHTML=`<div class="phone-box"><div class="phone-title">📞 Telefon-Joker</div><div class="phone-msg"><strong>Dein Freund sagt:</strong><br>"${q.tel}"</div><button class="phone-close" onclick="this.closest('.phone-overlay').remove()">Auflegen</button></div>`;
+    document.body.appendChild(overlay);
+  }
+}
+
+function endWWM(lastOk,lastQ){
+  document.getElementById('wm-game').style.display='none';
+  const r=document.getElementById('wm-res');r.style.display='block';
+  const won=lastOk&&W.q>=WWM_QS.length;
+  const amt=won?WWM_AMT[9]:(lastQ>0?WWM_AMT[Math.max(0,WWM_CHECK.filter(c=>c<lastQ).pop()??-1)]:'0 €');
+  r.innerHTML=`<div class="result" style="background:linear-gradient(135deg,rgba(250,204,21,.07),var(--bg3))">
+    <div class="res-icon">${won?'🏆':lastOk?'⭐':'💸'}</div>
+    <div class="res-title">${won?'Jackpot!':lastOk?`Frage ${W.q} erreicht`:'Falsch geantwortet'}</div>
+    <div class="res-sub">${won?'Alle 10 Fragen richtig!':`Du gewinnst: ${amt}`}</div>
+    <div class="res-score" style="background:linear-gradient(135deg,#FACC15,#F97316);-webkit-background-clip:text">${won?'16.000 €':amt}</div>
+    <div class="res-btns">
+      <button class="retry-btn" onclick="openGame('wwm','Wer wird Millionär?')">↺ Nochmal</button>
+      <button class="hub-btn" onclick="showHub()">Alle Spiele</button>
+    </div></div>`;
+}
+
+/* ══════════════════════════════════════════════════
+   SPACE SHOOTER
+══════════════════════════════════════════════════ */
+const SH_QS=[
+  {q:'Was verbinden die Häkchen?',c:'Federäste',w:['Schaft','Bürzelöl','Luftstrom']},
+  {q:'Aus welcher Drüse stammt das Pflegeöl?',c:'Bürzeldrüse',w:['Schnabeldrüse','Brustdrüse','Hautdrüse']},
+  {q:'Was unterstützt eine glatte Federfläche?',c:'Auftrieb',w:['Wärme','Tarnung','Gewicht']},
+  {q:'Was stören ungeordnete Federäste?',c:'Luftstrom',w:['Schaft','Häkchen','Öl']},
+  {q:'Womit putzt sich der Vogel?',c:'Schnabel',w:['Krallen','Flügel','Zunge']},
+];
+
+function initShooter(){
+  document.getElementById('p-shooter').innerHTML=`<div id="sh-inst" class="inst">
+    <div class="inst-icon">🚀</div><h3>Space Shooter</h3>
+    <p>Schieß auf die <b>richtige Antwort</b> (grün) und meide die falschen. 5 Fragen!</p>
+    <div class="inst-hints"><span>← → Pfeiltasten oder A/D zum Bewegen</span><span>Leertaste oder Klick zum Schießen</span></div>
+    <button class="start-btn" onclick="runShooter()">Spielen →</button>
+  </div>
+  <div id="sh-game" style="display:none">
+    <div class="sh-hud"><div class="hud-chip"><span>Frage</span><b id="sh-qn">1/5</b></div><div class="hud-chip"><span>Punkte</span><b id="sh-sc">0</b></div><div class="hud-chip"><span>Leben</span><b id="sh-lv">❤️❤️❤️</b></div></div>
+    <div class="sh-q">🪶 <em id="sh-qt">–</em></div>
+    <canvas id="sh-canvas" height="310"></canvas>
+    <button class="sh-shoot-btn" id="sh-shoot-btn">🔫 SCHUSS</button>
+    <div class="sh-hint" id="sh-hint">Finger ziehen = Schiff steuern · Button = schießen</div>
+  </div>
+  <div id="sh-res" style="display:none"></div>`;
+}
+
+function runShooter(){
+  document.getElementById('sh-inst').style.display='none';
+  document.getElementById('sh-game').style.display='block';
+  const cv=document.getElementById('sh-canvas');cv.width=cv.offsetWidth||760;
+  const cx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  const S={
+    ship:{x:W/2,y:H-50,spd:5.5},bullets:[],enemies:[],parts:[],
+    stars:Array.from({length:55},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.3,s:Math.random()*.7+.2})),
+    keys:{l:0,r:0},qIdx:0,score:0,lives:3,cd:0,locked:false,feedback:null,
+    shoot(){if(this.cd>0)return;this.bullets.push({x:this.ship.x,y:this.ship.y-18,w:4,h:11});this.cd=11;},
+    boom(x,y,col){for(let i=0;i<9;i++){const a=Math.random()*Math.PI*2,v=Math.random()*3+1;this.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:Math.random()*3+1,life:1,col});}}
+  };
+  function spawn(){
+    S.enemies=[];const q=SH_QS[S.qIdx];
+    document.getElementById('sh-qt').textContent=q.q;
+    document.getElementById('sh-qn').textContent=`${S.qIdx+1}/5`;
+    const opts=[...q.w,q.c].sort(()=>Math.random()-.5);
+    const gap=(W-100)/(opts.length-1);
+    opts.forEach((txt,i)=>S.enemies.push({x:50+gap*i,y:-30-i*16,w:86,h:27,txt,ok:txt===q.c,spd:1.1+S.qIdx*.1,alive:true}));
+  }
+  function updHUD(){document.getElementById('sh-lv').textContent='❤️'.repeat(S.lives)+'🖤'.repeat(3-S.lives);document.getElementById('sh-sc').textContent=S.score;}
+  function nextQ(){S.qIdx++;S.bullets=[];S.enemies.forEach(e=>e.alive=false);if(S.qIdx>=SH_QS.length)setTimeout(()=>endSH(true),300);else setTimeout(spawn,400);}
+  function endSH(win){cancelAnimationFrame(window._raf);window._raf=null;document.getElementById('sh-game').style.display='none';const r=document.getElementById('sh-res');r.style.display='block';r.innerHTML=`<div class="result"><div class="res-icon">${win?'🎉':'💀'}</div><div class="res-title">${win?'Alle abgeschossen!':'Kein Leben mehr'}</div><div class="res-sub">${win?'5/5 Fragen korrekt.':''}</div><div class="res-score">${S.score} Pkt</div><div class="res-btns"><button class="retry-btn" onclick="openGame('shooter','Space Shooter')">↺ Nochmal</button><button class="hub-btn" onclick="showHub()">Alle Spiele</button></div></div>`;}
+  function loop(){
+    if(S.keys.l&&S.ship.x>28)S.ship.x-=S.ship.spd;
+    if(S.keys.r&&S.ship.x<W-28)S.ship.x+=S.ship.spd;
+    if(S.cd>0)S.cd--;
+    S.stars.forEach(s=>{s.y+=s.s;if(s.y>H){s.y=0;s.x=Math.random()*W;}});
+    S.bullets.forEach(b=>b.y-=9);S.bullets=S.bullets.filter(b=>b.y>-5);
+    S.enemies.forEach(e=>{if(e.alive)e.y+=e.spd;});
+    S.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life-=.055;p.vy+=.08;});S.parts=S.parts.filter(p=>p.life>0);
+    if(S.feedback){S.feedback.alpha-=.045;if(S.feedback.alpha<=0)S.feedback=null;}
+    S.bullets.forEach((b,bi)=>S.enemies.forEach(e=>{
+      if(!e.alive)return;
+      if(b.x>e.x-e.w/2&&b.x<e.x+e.w/2&&b.y>e.y-e.h/2&&b.y<e.y+e.h/2){
+        S.bullets.splice(bi,1);e.alive=false;
+        S.boom(e.x,e.y,e.ok?'#22C55E':'#EF4444');
+        S.feedback={txt:e.ok?'✓ RICHTIG!':'✗ FALSCH!',col:e.ok?'#22C55E':'#EF4444',alpha:2.2};
+        if(!S.locked){S.locked=true;if(e.ok){S.score+=200;updHUD();setTimeout(()=>{S.locked=false;nextQ();},700);}else{S.lives--;updHUD();setTimeout(()=>{S.locked=false;if(S.lives<=0)endSH(false);},700);}}
+      }
+    }));
+    S.enemies.forEach(e=>{if(!e.alive||e.y<H+10)return;e.alive=false;if(e.ok){S.lives--;updHUD();if(S.lives<=0){endSH(false);return;}setTimeout(spawn,400);}});
+    cx.clearRect(0,0,W,H);cx.fillStyle='#000510';cx.fillRect(0,0,W,H);
+    S.stars.forEach(s=>{cx.beginPath();cx.arc(s.x,s.y,s.r,0,Math.PI*2);cx.fillStyle=`rgba(255,255,255,${.25+s.r*.15})`;cx.fill();});
+    S.parts.forEach(p=>{cx.beginPath();cx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);cx.fillStyle=p.col+Math.floor(p.life*255).toString(16).padStart(2,'0');cx.fill();});
+    S.enemies.forEach(e=>{
+      if(!e.alive)return;
+      cx.shadowColor='#6C3BF5';cx.shadowBlur=8;
+      cx.beginPath();cx.roundRect(e.x-e.w/2,e.y-e.h/2,e.w,e.h,7);
+      cx.fillStyle='rgba(108,59,245,.15)';cx.fill();
+      cx.strokeStyle='rgba(167,139,250,.7)';cx.lineWidth=1.5;cx.stroke();cx.shadowBlur=0;
+      cx.fillStyle='#C4B5FD';cx.font=`600 ${Math.min(12,74/e.txt.length+6)}px Inter,sans-serif`;cx.textAlign='center';cx.textBaseline='middle';cx.fillText(e.txt,e.x,e.y);
+    });
+    S.bullets.forEach(b=>{cx.beginPath();cx.roundRect(b.x-b.w/2,b.y,b.w,b.h,2);cx.shadowColor='#FACC15';cx.shadowBlur=8;cx.fillStyle='#FACC15';cx.fill();cx.shadowBlur=0;});
+    if(S.feedback&&S.feedback.alpha>0){const fa=Math.min(1,S.feedback.alpha);cx.save();cx.globalAlpha=fa;cx.font='bold 2.8rem Inter,sans-serif';cx.fillStyle=S.feedback.col;cx.textAlign='center';cx.textBaseline='middle';cx.shadowColor=S.feedback.col;cx.shadowBlur=24;cx.fillText(S.feedback.txt,W/2,H/2);cx.restore();}
+    const sx=S.ship.x,sy=S.ship.y;
+    const fl=8+Math.random()*5,fg=cx.createLinearGradient(sx,sy+16,sx,sy+16+fl);
+    fg.addColorStop(0,'#F97316');fg.addColorStop(1,'transparent');
+    cx.beginPath();cx.moveTo(sx-7,sy+16);cx.lineTo(sx,sy+16+fl);cx.lineTo(sx+7,sy+16);cx.closePath();cx.fillStyle=fg;cx.fill();
+    cx.shadowColor='#6C3BF5';cx.shadowBlur=14;
+    const sg=cx.createLinearGradient(sx-13,sy-18,sx+13,sy+16);sg.addColorStop(0,'#A78BFA');sg.addColorStop(1,'#6C3BF5');
+    cx.fillStyle=sg;cx.beginPath();cx.moveTo(sx,sy-20);cx.lineTo(sx+13,sy+15);cx.lineTo(sx+5,sy+9);cx.lineTo(sx,sy+13);cx.lineTo(sx-5,sy+9);cx.lineTo(sx-13,sy+15);cx.closePath();cx.fill();cx.shadowBlur=0;
+    cx.beginPath();cx.ellipse(sx,sy-6,4,6,0,0,Math.PI*2);cx.fillStyle='rgba(200,230,255,.7)';cx.fill();
+    window._raf=requestAnimationFrame(loop);
+  }
+  window._kd=e=>{if(e.key==='ArrowLeft'||e.key==='a')S.keys.l=1;if(e.key==='ArrowRight'||e.key==='d')S.keys.r=1;if(e.key===' '){S.shoot();e.preventDefault();}};
+  window._ku=e=>{if(e.key==='ArrowLeft'||e.key==='a')S.keys.l=0;if(e.key==='ArrowRight'||e.key==='d')S.keys.r=0;};
+  document.addEventListener('keydown',window._kd);document.addEventListener('keyup',window._ku);
+  // Maus-Klick = schießen (Desktop)
+  cv.onclick=()=>S.shoot();
+
+  // Finger-Steuerung: Schiff folgt dem Finger auf dem Canvas
+  function getTouchX(e){
+    const rect=cv.getBoundingClientRect();
+    const t=e.touches[0];
+    return(t.clientX-rect.left)*(cv.width/rect.width);
+  }
+  cv.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    S.ship.x=Math.max(28,Math.min(W-28,getTouchX(e)));
+  },{passive:false});
+  cv.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    S.ship.x=Math.max(28,Math.min(W-28,getTouchX(e)));
+  },{passive:false});
+
+  // Shoot-Button + Hint auf Touch-Geräten einblenden
+  const hasTouch='ontouchstart' in window||navigator.maxTouchPoints>0;
+  const shootBtn=document.getElementById('sh-shoot-btn');
+  const shootHint=document.getElementById('sh-hint');
+  if(hasTouch){
+    if(shootBtn){shootBtn.style.display='block';}
+    if(shootHint){shootHint.style.display='block';}
+  }
+  if(shootBtn){
+    shootBtn.addEventListener('touchstart',e=>{e.preventDefault();S.shoot();},{passive:false});
+    shootBtn.onclick=()=>S.shoot();
+  }
+
+  spawn();window._raf=1;loop();
+}
+
+/* ══════════════════════════════════════════════════
+   MEMORY MATRIX
+══════════════════════════════════════════════════ */
+const MEM_P=[
+  {a:'Schaft',b:'Stabile Achse der Feder'},
+  {a:'Federäste',b:'Zweigen vom Schaft ab'},
+  {a:'Häkchen',b:'Verbinden die Federäste'},
+  {a:'Bürzeldrüse',b:'Produziert Pflegeöl'},
+  {a:'Gefieder putzen',b:'Richtet Federäste aus'},
+  {a:'Glatte Federfläche',b:'Unterstützt Auftrieb'},
+  {a:'Bürzelöl',b:'Lässt Wasser abperlen'},
+  {a:'Ungeordnete Federäste',b:'Stören Luftstrom'},
+];
+let M={};
+function initMemory(){
+  document.getElementById('p-memory').innerHTML=`<div id="mm-inst" class="inst">
+    <div class="inst-icon">🧩</div><h3>Memory Matrix</h3>
+    <p>Finde alle <b>8 Struktur-Funktions-Paare</b> der Vogelfeder. Klicke zwei Karten an!</p>
+    <div class="inst-hints"><span>Klicke eine Karte zum Aufdecken</span><span>Finde: Struktur ↔ Funktion/Wirkung</span><span>8 Paare · 16 Karten</span></div>
+    <button class="start-btn" onclick="runMemory()">Spielen →</button>
+  </div>
+  <div id="mm-game" style="display:none"></div>
+  <div id="mm-res" style="display:none"></div>`;
+}
+function runMemory(){
+  document.getElementById('mm-inst').style.display='none';document.getElementById('mm-game').style.display='block';
+  const cards=[];MEM_P.forEach((p,i)=>{cards.push({id:i*2,pid:i,txt:p.a});cards.push({id:i*2+1,pid:i,txt:p.b});});
+  for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
+  M={cards,flipped:[],matched:new Set(),moves:0,secs:0,locked:false};
+  window._memT=setInterval(()=>{M.secs++;const e=document.getElementById('mm-time');if(e)e.textContent=M.secs+'s';},1000);
+  renderMemory();
+}
+function renderMemory(){
+  document.getElementById('mm-game').innerHTML=`
+    <div class="mem-stats"><div class="mem-stat"><span>Paare</span><b id="mm-pairs">${M.matched.size}/8</b></div><div class="mem-stat"><span>Züge</span><b id="mm-moves">${M.moves}</b></div><div class="mem-stat"><span>Zeit</span><b id="mm-time">${M.secs}s</b></div></div>
+    <div class="mem-grid">${M.cards.map((c,i)=>`<div class="mc${M.flipped.includes(i)?' fl':''}${M.matched.has(c.pid)?' mt':''}" data-i="${i}" onclick="flipMem(${i})"><div class="mc-inner"><div class="mc-f">🪶</div><div class="mc-b">${c.txt}</div></div></div>`).join('')}</div>`;
+}
+function flipMem(i){
+  if(M.locked||M.flipped.includes(i)||M.matched.has(M.cards[i].pid))return;
+  M.flipped.push(i);document.querySelector(`[data-i="${i}"]`).classList.add('fl');
+  if(M.flipped.length===2){
+    M.moves++;document.getElementById('mm-moves').textContent=M.moves;M.locked=true;
+    const[a,b]=M.flipped,ca=M.cards[a],cb=M.cards[b];
+    if(ca.pid===cb.pid&&a!==b){
+      M.matched.add(ca.pid);document.getElementById('mm-pairs').textContent=`${M.matched.size}/8`;
+      setTimeout(()=>{[a,b].forEach(x=>document.querySelector(`[data-i="${x}"]`).classList.add('mt'));M.flipped=[];M.locked=false;if(M.matched.size===8){clearInterval(window._memT);window._memT=null;setTimeout(endMemory,600);}},350);
+    }else{
+      setTimeout(()=>{[a,b].forEach(x=>{const el=document.querySelector(`[data-i="${x}"]`);el.classList.add('wm');el.classList.remove('fl');setTimeout(()=>el.classList.remove('wm'),420);});M.flipped=[];M.locked=false;},900);
+    }
+  }
+}
+function endMemory(){
+  document.getElementById('mm-game').style.display='none';const r=document.getElementById('mm-res');r.style.display='block';
+  const stars=M.moves<=12?'⭐⭐⭐':M.moves<=18?'⭐⭐':'⭐';
+  r.innerHTML=`<div class="result"><div class="res-icon">🧩</div><div class="res-title">Alle Paare gefunden!</div><div class="res-sub">${M.moves} Züge · ${M.secs} Sekunden</div><div class="res-score">${stars}</div><div class="res-btns"><button class="retry-btn" onclick="openGame('memory','Memory Matrix')">↺ Nochmal</button><button class="hub-btn" onclick="showHub()">Alle Spiele</button></div></div>`;
+}
+
+/* ══════════════════════════════════════════════════
+   RICHTIG ODER FALSCH
+══════════════════════════════════════════════════ */
+const RF_QS=[
+  {s:'Ein Vogel putzt sein Gefieder mit dem Schnabel.',ok:true},
+  {s:'Die Häkchen sitzen direkt auf dem Schaft.',ok:false,exp:'Die Häkchen sitzen an den Federästen, nicht am Schaft.'},
+  {s:'Das Bürzeldrüsen-Öl lässt Wasser von der Feder abperlen.',ok:true},
+  {s:'Ungeordnete Federäste verbessern den Auftrieb.',ok:false,exp:'Ungeordnete Federäste stören den Luftstrom und verringern den Auftrieb.'},
+  {s:'Die Bürzeldrüse befindet sich am Schwanzansatz des Vogels.',ok:true},
+  {s:'Eine glatte Federfläche stört den Luftstrom.',ok:false,exp:'Eine glatte Federfläche ermöglicht gleichmäßigen Luftstrom und unterstützt Auftrieb.'},
+  {s:'Häkchen verbinden die Federäste miteinander.',ok:true},
+  {s:'Der Schaft ist der weiche Teil der Feder.',ok:false,exp:'Der Schaft ist der feste, stabile Mittelteil der Feder.'},
+  {s:'Gefieder putzen richtet Federäste und Häkchen neu aus.',ok:true},
+  {s:'Vögel können bei Regen nicht mehr fliegen.',ok:false,exp:'Das Bürzelöl schützt die Federn vor Nässe – Vögel bleiben flugfähig.'},
+  {s:'Der Schaft ist der stabile Mittelteil einer Feder.',ok:true},
+  {s:'Geordnete Federäste stören den Luftstrom.',ok:false,exp:'Geordnete Federäste ermöglichen gleichmäßigen Luftstrom – das Gegenteil ist richtig.'},
+];
+let RF={};
+function initRF(){
+  document.getElementById('p-rf').innerHTML=`<div id="rf-inst" class="inst">
+    <div class="inst-icon">⚡</div><h3>Richtig oder Falsch</h3>
+    <p>12 Aussagen über Gefiederpflege – <b>Richtig oder Falsch?</b> Du hast 12 Sekunden pro Frage!</p>
+    <div class="inst-hints"><span>Klicke ✓ RICHTIG oder ✗ FALSCH</span><span>Bei Falsch: korrekte Erklärung erscheint</span><span>Schnell sein = Bonuspunkte!</span></div>
+    <button class="start-btn" onclick="runRF()">Blitzstart →</button>
+  </div>
+  <div id="rf-game" style="display:none"></div>
+  <div id="rf-res" style="display:none"></div>`;
+}
+function runRF(){
+  document.getElementById('rf-inst').style.display='none';document.getElementById('rf-game').style.display='block';
+  RF={idx:0,score:0,results:[],timeLeft:12,total:RF_QS.length};
+  renderRF();startRFTimer();
+}
+function renderRF(){
+  const q=RF_QS[RF.idx];
+  const dots=RF_QS.map((_,i)=>`<div class="rf-dot${i<RF.idx?(RF.results[i]?' ok':' bad'):i===RF.idx?' cur':''}"></div>`).join('');
+  document.getElementById('rf-game').innerHTML=`
+    <div class="rf-hud"><div class="hud-chip"><span>Frage</span><b>${RF.idx+1}/${RF.total}</b></div><div class="hud-chip"><span>Punkte</span><b id="rf-sc">${RF.score}</b></div><div class="hud-chip"><span>Zeit</span><b id="rf-ti">${RF.timeLeft}s</b></div></div>
+    <div class="rf-progress">${dots}</div>
+    <div class="rf-timer-bar"><div class="rf-timer-fill" id="rf-tfill" style="width:${RF.timeLeft/12*100}%"></div></div>
+    <div class="rf-stmt" id="rf-stmt">${q.s}</div>
+    <div class="rf-btns">
+      <button class="rf-btn ok" onclick="answerRF(true)">✓ RICHTIG</button>
+      <button class="rf-btn bad" onclick="answerRF(false)">✗ FALSCH</button>
+    </div>
+    <div class="rf-feedback" id="rf-fb"></div>`;
+}
+function startRFTimer(){
+  clearInterval(window._rfT);
+  window._rfT=setInterval(()=>{
+    RF.timeLeft--;
+    const ti=document.getElementById('rf-ti'),tf=document.getElementById('rf-tfill');
+    if(ti)ti.textContent=RF.timeLeft+'s';
+    if(tf)tf.style.width=(RF.timeLeft/12*100)+'%';
+    if(RF.timeLeft<=0){clearInterval(window._rfT);answerRF(null);}
+  },1000);
+}
+function answerRF(choice){
+  clearInterval(window._rfT);
+  const q=RF_QS[RF.idx];const correct=choice===q.ok;
+  document.querySelectorAll('.rf-btn').forEach(b=>b.disabled=true);
+  const stmt=document.getElementById('rf-stmt');
+  stmt.classList.add(correct?'flash-ok':'flash-bad');
+  const timeBonus=Math.max(0,Math.floor(RF.timeLeft/2));
+  if(correct)RF.score+=10+timeBonus;
+  RF.results.push(correct);
+  const fb=document.getElementById('rf-fb');
+  if(fb){
+    fb.style.color=correct?'#4ADE80':'#F87171';
+    fb.textContent=correct?`✓ Richtig! +${10+timeBonus} Punkte`:`✗ ${choice===null?'Zeit abgelaufen! ':''}`+(q.exp||`Die Antwort war: ${q.ok?'RICHTIG':'FALSCH'}`);
+  }
+  setTimeout(()=>{
+    RF.idx++;RF.timeLeft=12;
+    if(RF.idx>=RF.total)endRF();
+    else{renderRF();startRFTimer();}
+  },1600);
+}
+/* ══════════════════════════════════════════════════
+   LERNFLOW
+══════════════════════════════════════════════════ */
+const FLOW_SCORE={einstieg:0,explorer:0,memory:0,hangman:0,boss:0};
+
+// ── helpers ──
+function showFvPanel(id){document.querySelectorAll('.fv-panel').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function updateFlowProgress(phase){
+  ['fvs0','fvs1','fvs2'].forEach((id,i)=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.className='fv-step '+(i<phase?'done':i===phase?'active':'future');
+  });
+}
+
+function startFlow(){
+  stopAll();
+  document.getElementById('hub').style.display='none';
+  document.getElementById('gc').classList.remove('on');
+  const fv=document.getElementById('fv');fv.style.display='flex';
+  FLOW_SCORE.einstieg=0;FLOW_SCORE.explorer=0;FLOW_SCORE.memory=0;FLOW_SCORE.hangman=0;FLOW_SCORE.boss=0;
+  HYP_STATE={idx:0,selected:null};
+  HYP_SAVED=[];
+  FEX_STATE={flipped:new Set()};
+  updateFlowProgress(0);
+  showFvPanel('fvp-einstieg');
+  renderHyp();
+}
+function exitFlow(){
+  document.getElementById('fv').style.display='none';
+  document.getElementById('hub').style.display='';
+  stopAll();
+}
+
+// ── PHASE 1: EINSTIEG ──
+const HYP_QS=[
+  {type:'open',
+   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Mallard_duck_preening.jpg/480px-Mallard_duck_preening.jpg',
+   imgCaption:'Stockente beim Gefiederpflegen · Foto: Wikimedia Commons',
+   imgFallback:'🦆',
+   imgFallbackSub:'Stockente putzt ihr Gefieder',
+   q:'Schau das Bild an: Die Ente sitzt am Wasser und putzt ausgiebig ihr Gefieder mit dem Schnabel. <strong>Warum macht sie das?</strong> Schreib deine Vermutung — mindestens einen vollständigen Satz!',
+   placeholder:'Ich glaube, Vögel putzen sich ihr Gefieder, weil ...',
+   keywords:['fliegen','flug','federn','öl','wasser','parasit','sauber','pflege','luft','auftrieb','schutz','glatt','nass','schwimm','drüse','feder'],
+   minLen:30,
+   reveal:'Vögel putzen sich aus mehreren Gründen: Die Pflege hält die Federn geordnet (→ besser fliegen), verteilt schützendes Öl aus der Bürzeldrüse (→ Wasser perlt ab) und entfernt Parasiten.'},
+  {type:'open',
+   img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Feather.jpg/320px-Feather.jpg',
+   imgCaption:'Vogelfeder in Nahaufnahme · Foto: Wikimedia Commons',
+   imgFallback:'🪶',
+   imgFallbackSub:'Vogelfeder – Makroaufnahme',
+   q:'Schau dir die Feder genau an. Du siehst viele feine Äste. <strong>Was könnte passieren, wenn ein Vogel seine Federn tagelang nicht pflegt?</strong> Was denkst du — beim Fliegen? Bei Regen?',
+   placeholder:'Wenn ein Vogel seine Federn nicht pflegt, dann ...',
+   keywords:['fliegen','nass','kalt','parasit','krank','federn','auftrieb','luftstrom','gestört','schwer','zusammen','klettverschluss','öl','trennen','ungeordnet'],
+   minLen:30,
+   reveal:'Ohne Pflege trennen sich die Federäste (Auftrieb sinkt), Federn sind nicht mehr wasserabweisend (Vogel wird nass und kühlt aus), Parasiten siedeln sich an.'},
+  {type:'mc',
+   q:'Was verteilt der Vogel beim Putzen auf seine Federn?',
+   opts:['Wasser aus Pfützen','Staub vom Boden','Öl aus der Bürzeldrüse','Nichts – Trockenpflege reicht'],
+   ok:2,
+   reveal:'Das Bürzelöl legt sich als dünner Schutzfilm über die Federn — Wasser und Schmutz perlen dann einfach ab.'},
+];
+let HYP_STATE={idx:0,selected:null};
+let HYP_CUR={minLen:30,keywords:[]};
+let HYP_SAVED=[];
+
+function renderHyp(){
+  const q=HYP_QS[HYP_STATE.idx];
+  const panel=document.getElementById('fvp-einstieg');
+  if(q.type==='open'){
+    HYP_CUR={minLen:q.minLen,keywords:q.keywords};
+    panel.innerHTML=`
+      <div class="ph-lbl" style="color:#F97316">① Einstieg</div>
+      <h2 class="ph-h" style="margin-bottom:4px">Raum für Hypothesen</h2>
+      <p class="ph-sub">Schreib was du denkst — bevor du die Antwort siehst!</p>
+      <div class="hyp-counter">Frage ${HYP_STATE.idx+1} von ${HYP_QS.length}</div>
+      <div class="hyp-scene">
+        <img src="${q.img}" alt="${q.imgCaption}" class="hyp-scene-img"
+          onerror="this.style.display='none';document.getElementById('hyp-fbimg').style.display='block'">
+        <div id="hyp-fbimg" class="hyp-scene-fallback" style="display:none">
+          <div style="font-size:4rem;margin-bottom:6px">${q.imgFallback}</div>
+          <div style="color:var(--m);font-size:.82rem">${q.imgFallbackSub}</div>
+        </div>
+        <div class="hyp-scene-caption">${q.imgCaption}</div>
+      </div>
+      <div class="hyp-q" style="font-size:.9rem;text-align:left;line-height:1.6">${q.q}</div>
+      <textarea id="hyp-text" class="hyp-textarea" placeholder="${q.placeholder}" oninput="checkHypText()"></textarea>
+      <div class="hyp-chars" id="hyp-chars">Mindestens ${q.minLen} Zeichen · <span id="hyp-ccount">0</span> / ${q.minLen}</div>
+      <div style="text-align:center;margin-bottom:8px">
+        <button class="continue-btn" id="hyp-submit" onclick="submitHypOpen()" style="opacity:.35;pointer-events:none">Abschicken →</button>
+      </div>
+      <div id="hyp-reveal-wrap" style="display:none">
+        <div class="hyp-kw-wrap" id="hyp-kw-wrap"></div>
+        <div class="hyp-reveal" id="hyp-reveal" style="display:block"></div>
+        <div style="text-align:center;margin-top:12px"><button class="continue-btn" onclick="nextHyp()">Weiter →</button></div>
+      </div>`;
+  } else {
+    panel.innerHTML=`
+      <div class="ph-lbl" style="color:#F97316">① Einstieg</div>
+      <h2 class="ph-h">Eine letzte Frage</h2>
+      <p class="ph-sub">Tippe auf deine Antwort!</p>
+      <div class="hyp-counter">Frage ${HYP_STATE.idx+1} von ${HYP_QS.length}</div>
+      <div class="hyp-q">${q.q}</div>
+      <div class="hyp-opts">${q.opts.map((o,i)=>`<button class="hyp-opt" id="hopt${i}" onclick="selectHyp(${i})">${o}</button>`).join('')}</div>
+      <div class="hyp-reveal" id="hyp-reveal" style="display:none">💡 ${q.reveal}</div>
+      <div style="text-align:center"><button class="continue-btn" id="hyp-cont" style="display:none" onclick="nextHyp()">Weiter →</button></div>`;
+  }
+}
+
+function checkHypText(){
+  const txt=document.getElementById('hyp-text').value;
+  const len=txt.length;
+  const cc=document.getElementById('hyp-ccount');
+  const chars=document.getElementById('hyp-chars');
+  const btn=document.getElementById('hyp-submit');
+  if(cc)cc.textContent=len;
+  const ready=len>=HYP_CUR.minLen;
+  if(chars)chars.classList.toggle('ready',ready);
+  if(btn){btn.style.opacity=ready?'1':'0.35';btn.style.pointerEvents=ready?'auto':'none';}
+}
+
+function submitHypOpen(){
+  const q=HYP_QS[HYP_STATE.idx];
+  const rawTxt=document.getElementById('hyp-text').value||'';
+  const txt=rawTxt.toLowerCase();
+  if(txt.length<HYP_CUR.minLen)return;
+  // Hypothese speichern für spätere Gegenüberstellung
+  HYP_SAVED.push({txt:rawTxt,reveal:q.reveal,num:HYP_STATE.idx+1});
+  document.getElementById('hyp-text').disabled=true;
+  document.getElementById('hyp-submit').style.display='none';
+  const found=HYP_CUR.keywords.filter(k=>txt.includes(k));
+  FLOW_SCORE.einstieg+=Math.min(40,found.length*8);
+  // Ermutigende Rückmeldung — KEIN Spoiler
+  const msg=found.length>=3
+    ?'Gut gedacht — du hast schon einige Schlüsselideen! Wir schauen das am Ende nochmal zusammen an.'
+    :found.length>=1
+    ?'Interessante Idee! Du bist auf dem richtigen Weg. Am Ende vergleichen wir deine Vermutung mit der Erklärung.'
+    :'Spannende Überlegung! Wir schauen am Ende gemeinsam, wie nah du dran warst.';
+  document.getElementById('hyp-reveal-wrap').innerHTML=`
+    <div style="background:rgba(108,59,245,.1);border:1px solid rgba(108,59,245,.3);border-left:3px solid var(--p);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#A78BFA;margin-bottom:5px">✓ Vermutung gespeichert</div>
+      <div style="font-size:.87rem;color:var(--t);line-height:1.6">💬 ${msg}</div>
+    </div>
+    <div style="text-align:center"><button class="continue-btn" onclick="nextHyp()">Weiter →</button></div>`;
+  document.getElementById('hyp-reveal-wrap').style.display='block';
+}
+
+function selectHyp(i){
+  if(HYP_STATE.selected!==null)return;
+  HYP_STATE.selected=i;
+  const q=HYP_QS[HYP_STATE.idx];
+  if(i===q.ok)FLOW_SCORE.einstieg+=30;
+  q.opts.forEach((_,j)=>{
+    const b=document.getElementById('hopt'+j);
+    b.className='hyp-opt '+(j===q.ok?'reveal-ok':'reveal-bad');
+    b.disabled=true;
+  });
+  document.getElementById('hyp-reveal').style.display='block';
+  document.getElementById('hyp-cont').style.display='inline-block';
+}
+
+function nextHyp(){
+  HYP_STATE.idx++;HYP_STATE.selected=null;
+  if(HYP_STATE.idx>=HYP_QS.length)showT1();
+  else renderHyp();
+}
+
+// ── TRANSITION 1 ──
+function showT1(){
+  updateFlowProgress(0);showFvPanel('fvp-t1');
+  document.getElementById('fvp-t1').innerHTML=`
+    <div class="phase-transition">
+      <div class="pt-phase-done">✅</div>
+      <div class="hub-lbl" style="color:#F97316;text-align:center">Einstieg abgeschlossen</div>
+      <div class="pt-h">Du hast Hypothesen aufgestellt!</div>
+      <p class="pt-sub">Jetzt entdeckst du, wie eine Vogelfeder wirklich aufgebaut ist — und warum Gefiederpflege so wichtig ist.</p>
+      <div class="pt-score">${FLOW_SCORE.einstieg} Punkte</div>
+      <div class="pt-next">🪶 Weiter: Interaktiver Feder-Explorer + Mini-Memory</div>
+      <button class="continue-btn" onclick="startExplorer()">Weiter zur Erarbeitung →</button>
+    </div>`;
+}
+
+// ── PHASE 2a: FEDER-EXPLORER (SVG Hotspot Diagram) ──
+const FEX_HOTSPOTS=[
+  {num:1,name:'Schaft',col:'#F97316',icon:'🪶',func:'Stabilität & Achse',
+   desc:'Der <strong>Schaft</strong> ist die harte Mittelachse der Feder. Er besteht aus einer hornartigen Substanz und gibt der gesamten Feder ihren Halt und ihre Form — wie der Stamm eines Baumes.',
+   cx:130,cy:355},
+  {num:2,name:'Federäste',col:'#6C3BF5',icon:'🌿',func:'Bildet die Federfläche',
+   desc:'Vom Schaft zweigen nach links und rechts viele <strong>Federäste</strong> ab. An jedem Federast sitzen wiederum kleinere Nebenäste — die Träger der Häkchen.',
+   cx:58,cy:160},
+  {num:3,name:'Häkchen',col:'#3B82F6',icon:'🔗',func:'Hält die Fläche zusammen',
+   desc:'Auf jedem Federast sitzen hunderte winzige <strong>Häkchen</strong>, die sich mit den Häkchen des Nachbarasts verhaken — wie ein Klettverschluss. Wenn der Vogel putzt, richtet er sie mit dem Schnabel neu aus.',
+   cx:212,cy:110},
+  {num:4,name:'Glatte Federfläche',col:'#22C55E',icon:'✈️',func:'Erzeugt Auftrieb',
+   desc:'Wenn alle Häkchen verbunden sind, entsteht eine geschlossene, <strong>glatte Federfläche</strong>. Luft strömt gleichmäßig darüber — das erzeugt Auftrieb und ermöglicht gezieltes Fliegen.',
+   cx:130,cy:210},
+  {num:5,name:'Bürzeldrüse',col:'#FACC15',icon:'💧',func:'Öl für Wasserabweisung',
+   desc:'Die <strong>Bürzeldrüse</strong> sitzt am Schwanzansatz des Vogels — nicht an der Feder selbst. Sie produziert ein fettiges Öl. Beim Putzen streicht der Vogel mit dem Schnabel durch die Drüse und verteilt das Öl gleichmäßig auf den Federn.',
+   cx:218,cy:358},
+];
+let FEX_STATE={visited:new Set(),active:null};
+
+function startExplorer(){
+  updateFlowProgress(1);
+  FEX_STATE={visited:new Set(),active:null};
+  showFvPanel('fvp-explorer');
+  renderExplorer();
+}
+
+function featherSVG(){
+  const hs=FEX_HOTSPOTS;
+  const markers=hs.map(h=>{
+    const vis=FEX_STATE.visited.has(h.num);
+    const act=FEX_STATE.active===h.num;
+    return `<g onclick="clickHotspot(${h.num})" style="cursor:pointer">
+      <circle cx="${h.cx}" cy="${h.cy}" r="${act?19:16}" fill="${h.col}" opacity="${vis?0.55:0.92}" class="hs-marker${vis?' visited':''}"/>
+      ${act?`<circle cx="${h.cx}" cy="${h.cy}" r="24" fill="none" stroke="${h.col}" stroke-width="2" opacity="0.5"/>`:``}
+      <text x="${h.cx}" y="${h.cy+5}" text-anchor="middle" fill="${h.col==='#FACC15'?'#1a1100':'#fff'}" font-size="12" font-weight="800" style="pointer-events:none">${h.num}</text>
+    </g>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 260 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+    <!-- Feather silhouette -->
+    <path d="M130 18 C108 35 62 80 42 140 C26 188 34 230 52 262 C70 294 100 310 118 328 C126 336 130 355 130 400" fill="rgba(139,92,246,.1)" stroke="rgba(139,92,246,.35)" stroke-width="1.5" fill-rule="evenodd"/>
+    <path d="M130 18 C152 35 198 80 218 140 C234 188 226 230 208 262 C190 294 160 310 142 328 C134 336 130 355 130 400" fill="rgba(139,92,246,.1)" stroke="rgba(139,92,246,.35)" stroke-width="1.5"/>
+    <!-- Schaft -->
+    <line x1="130" y1="16" x2="130" y2="402" stroke="#C4B5FD" stroke-width="2.8" stroke-linecap="round"/>
+    <!-- Federäste left -->
+    <g stroke="rgba(167,139,250,.55)" stroke-width="1.1" stroke-linecap="round">
+      <line x1="130" y1="48" x2="80" y2="82"/><line x1="130" y1="68" x2="66" y2="108"/>
+      <line x1="130" y1="88" x2="54" y2="132"/><line x1="130" y1="108" x2="46" y2="158"/>
+      <line x1="130" y1="128" x2="42" y2="182"/><line x1="130" y1="148" x2="42" y2="206"/>
+      <line x1="130" y1="168" x2="46" y2="228"/><line x1="130" y1="188" x2="54" y2="248"/>
+      <line x1="130" y1="208" x2="66" y2="264"/><line x1="130" y1="228" x2="80" y2="276"/>
+      <line x1="130" y1="248" x2="96" y2="286"/><line x1="130" y1="268" x2="112" y2="294"/>
+      <line x1="130" y1="288" x2="122" y2="302"/>
+    </g>
+    <!-- Federäste right -->
+    <g stroke="rgba(167,139,250,.55)" stroke-width="1.1" stroke-linecap="round">
+      <line x1="130" y1="48" x2="180" y2="82"/><line x1="130" y1="68" x2="194" y2="108"/>
+      <line x1="130" y1="88" x2="206" y2="132"/><line x1="130" y1="108" x2="214" y2="158"/>
+      <line x1="130" y1="128" x2="218" y2="182"/><line x1="130" y1="148" x2="218" y2="206"/>
+      <line x1="130" y1="168" x2="214" y2="228"/><line x1="130" y1="188" x2="206" y2="248"/>
+      <line x1="130" y1="208" x2="194" y2="264"/><line x1="130" y1="228" x2="180" y2="276"/>
+      <line x1="130" y1="248" x2="164" y2="286"/><line x1="130" y1="268" x2="148" y2="294"/>
+      <line x1="130" y1="288" x2="138" y2="302"/>
+    </g>
+    <!-- Micro barb detail (Häkchen hint) near marker 3 -->
+    <g stroke="rgba(96,165,250,.6)" stroke-width="0.9" stroke-linecap="round">
+      <line x1="175" y1="106" x2="172" y2="100"/><line x1="179" y1="103" x2="176" y2="97"/>
+      <line x1="183" y1="100" x2="180" y2="94"/><line x1="187" y1="97" x2="184" y2="91"/>
+      <line x1="191" y1="94" x2="188" y2="88"/><line x1="195" y1="91" x2="192" y2="85"/>
+    </g>
+    <!-- Bürzeldrüse connection line (dashed) -->
+    <line x1="218" y1="342" x2="218" y2="380" stroke="rgba(250,204,21,.4)" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="218" y="338" text-anchor="middle" fill="rgba(250,204,21,.6)" font-size="9" font-weight="600" style="pointer-events:none">am Vogel</text>
+    ${markers}
+  </svg>`;
+}
+
+function renderExplorer(){
+  const done=FEX_STATE.visited.size;
+  const total=FEX_HOTSPOTS.length;
+  const pct=Math.round(done/total*100);
+  const active=FEX_HOTSPOTS.find(h=>h.num===FEX_STATE.active);
+
+  const dotsHTML=FEX_HOTSPOTS.map(h=>{
+    const vis=FEX_STATE.visited.has(h.num);
+    const act=FEX_STATE.active===h.num;
+    return `<div class="fex-visited-dot${vis?' done':''}" style="${vis?`background:${h.col};border-color:${h.col}`:''}${act?`;box-shadow:0 0 0 2px ${h.col}`:''}" onclick="clickHotspot(${h.num})">${h.num}</div>`;
+  }).join('');
+
+  const infoHTML=active
+    ?`<div class="hotspot-info hi-animate">
+        <div class="hi-header">
+          <div class="hi-num" style="background:${active.col}">${active.num}</div>
+          <div style="font-size:1.6rem">${active.icon}</div>
+          <div class="hi-title">
+            <div class="hi-name">${active.name}</div>
+            <div class="hi-func" style="background:${active.col}22;color:${active.col}">${active.func}</div>
+          </div>
+        </div>
+        <div class="hi-desc">${active.desc}</div>
+      </div>`
+    :`<div class="hotspot-info empty">
+        <div style="font-size:1.8rem">👆</div>
+        <div>Tippe auf einen<br>nummerierten Marker</div>
+      </div>`;
+
+  document.getElementById('fvp-explorer').innerHTML=`
+    <div class="ph-lbl" style="color:#60A5FA">② Erarbeitung</div>
+    <h2 class="ph-h">Feder-Anatomie entdecken</h2>
+    <p class="ph-sub">Tippe auf die <strong style="color:#A78BFA">nummerierten Marker</strong> im Diagramm — erfahre, was jeder Teil leistet!</p>
+    <div class="fex-progress-bar" style="margin-bottom:8px"><div class="fex-progress-fill" style="width:${pct}%"></div></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div class="fex-visited-strip">${dotsHTML}</div>
+      <div style="font-size:.75rem;color:var(--m)">${done}/${total} entdeckt</div>
+    </div>
+    <div class="fex-diagram-wrap">
+      <div class="fex-svg-container">${featherSVG()}</div>
+      ${infoHTML}
+    </div>
+    ${done===total
+      ?`<div style="text-align:center;margin-top:18px"><p style="color:#4ADE80;font-weight:700;margin-bottom:14px">🎉 Alle 5 Teile entdeckt! +50 Punkte</p><button class="continue-btn" onclick="startFMemory()">Weiter zum Memory →</button></div>`
+      :`<p style="text-align:center;color:var(--m);font-size:.79rem;margin-top:12px">Entdecke alle 5 Teile um weiterzumachen</p>`}`;
+}
+
+function clickHotspot(num){
+  FEX_STATE.visited.add(num);
+  FEX_STATE.active=num;
+  if(FEX_STATE.visited.size===FEX_HOTSPOTS.length)FLOW_SCORE.explorer=50;
+  renderExplorer();
+}
+
+// ── PHASE 2b: MINI MEMORY ──
+const FMEM_PAIRS=[
+  {a:'Schaft',b:'Gibt der Feder Halt und Form'},
+  {a:'Häkchen',b:'Verhaken wie ein Klettverschluss'},
+  {a:'Bürzelöl',b:'Lässt Wasser abperlen'},
+  {a:'Glatte Federfläche',b:'Erzeugt Auftrieb beim Fliegen'},
+];
+let FMEM_STATE={};
+
+function startFMemory(){
+  showFvPanel('fvp-fmemory');
+  const cards=[];
+  FMEM_PAIRS.forEach((p,i)=>{
+    cards.push({id:i*2,pairId:i,txt:p.a});
+    cards.push({id:i*2+1,pairId:i,txt:p.b});
+  });
+  for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
+  FMEM_STATE={cards,open:[],matched:new Set(),moves:0,score:0,done:false};
+  renderFMem();
+}
+function renderFMem(){
+  const s=FMEM_STATE;
+  document.getElementById('fvp-fmemory').innerHTML=`
+    <div class="ph-lbl" style="color:#60A5FA">② Erarbeitung</div>
+    <h2 class="ph-h">Mini-Memory</h2>
+    <p class="ph-sub">Finde die ${FMEM_PAIRS.length} passenden Struktur-Funktions-Paare!</p>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="hud-chip"><span>Paare</span><b>${s.matched.size/2}/${FMEM_PAIRS.length}</b></div>
+      <div class="hud-chip"><span>Züge</span><b>${s.moves}</b></div>
+    </div>
+    <div class="fmem-grid">${s.cards.map(c=>`
+      <div class="fmc${s.open.includes(c.id)?' fl':''}${s.matched.has(c.id)?' mt':''}" id="fmc${c.id}" onclick="clickFMC(${c.id})">
+        <div class="fmc-inner"><div class="fmc-f">🃏</div><div class="fmc-b">${c.txt}</div></div>
+      </div>`).join('')}</div>
+    ${s.done?`<div style="text-align:center"><p style="color:#4ADE80;font-weight:700;margin-bottom:14px">🎉 Alle Paare gefunden! +${s.score} Punkte</p><button class="continue-btn" onclick="startFlowHangman()">Weiter zum Hangman →</button></div>`:''}`;
+}
+function clickFMC(id){
+  const s=FMEM_STATE;
+  if(s.open.length>=2||s.open.includes(id)||s.matched.has(id))return;
+  s.open.push(id);renderFMem();
+  if(s.open.length===2){
+    s.moves++;
+    const [a,b]=s.open.map(x=>s.cards.find(c=>c.id===x));
+    if(a.pairId===b.pairId){
+      s.matched.add(a.id);s.matched.add(b.id);s.open=[];
+      s.score+=Math.max(10,30-s.moves*2);
+      if(s.matched.size===s.cards.length){s.done=true;FLOW_SCORE.memory=s.score;}
+      renderFMem();
+    } else {
+      setTimeout(()=>{
+        document.querySelectorAll('.fmc.fl:not(.mt)').forEach(el=>el.classList.add('wm'));
+        setTimeout(()=>{s.open=[];renderFMem();},420);
+      },750);
+    }
+  }
+}
+
+// ── TRANSITION 2 ──
+// ── FLOW: HANGMAN (Vokabel-Festigung) ──
+const FHM_WORDS=[
+  {word:'SCHAFT',hint:'Die stabile Mittelachse der Vogelfeder'},
+  {word:'HÄKCHEN',hint:'Verbinden Federäste wie ein Klettverschluss'},
+  {word:'BÜRZELDRÜSE',hint:'Produziert das Pflegeöl am Schwanzansatz'},
+];
+let FHM={};
+
+function startFlowHangman(){
+  showFvPanel('fvp-hangman');
+  document.removeEventListener('keydown',window._fhmKey);
+  FHM={words:FHM_WORDS,idx:0,wrong:0,guessed:new Set(),score:0,maxWrong:6};
+  window._fhmKey=e=>{const k=e.key.toUpperCase();if(/^[A-ZÄÖÜ]$/.test(k)&&k.length===1)fhmGuess(k);};
+  document.addEventListener('keydown',window._fhmKey);
+  renderFHM();
+}
+
+function renderFHM(){
+  const {words,idx,wrong,guessed,maxWrong,score}=FHM;
+  const word=words[idx].word;
+  const hint=words[idx].hint;
+  const solved=word.split('').every(l=>guessed.has(l));
+  const failed=wrong>=maxWrong;
+  document.getElementById('fvp-hangman').innerHTML=`
+    <div class="ph-lbl" style="color:#4ADE80">② Erarbeitung</div>
+    <h2 class="ph-h">Vokabel-Hangman</h2>
+    <p class="ph-sub">Errate die Fachbegriffe — Buchstabe für Buchstabe!</p>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="hud-chip"><span>Wort</span><b>${idx+1}/${words.length}</b></div>
+      <div class="hud-chip"><span>Fehler</span><b>${wrong}/${maxWrong}</b></div>
+      <div class="hud-chip"><span>Punkte</span><b>${score}</b></div>
+    </div>
+    <div class="hm-wrap">
+      <canvas id="fhm-cv" width="200" height="240" style="background:var(--bg3);border:1px solid var(--bd);border-radius:12px;display:block;flex-shrink:0"></canvas>
+      <div class="hm-right">
+        <div class="hm-hint"><b>Hinweis:</b> ${hint}</div>
+        <div class="hm-word">${word.split('').map(l=>`<div class="hm-letter">${guessed.has(l)?l:'&nbsp;'}</div>`).join('')}</div>
+        ${solved||failed?`
+          <div style="text-align:center;margin-top:14px">
+            ${solved?`<div style="color:#4ADE80;font-weight:700;margin-bottom:10px">✓ Richtig!</div>`
+              :`<div style="color:#F87171;font-weight:700;margin-bottom:8px">Das Wort war: <span style="color:var(--t)">${word}</span></div>`}
+            <button class="continue-btn" onclick="fhmNext()">
+              ${idx+1<words.length?'Nächstes Wort →':'Zur Sicherung →'}
+            </button>
+          </div>`:`
+          <div class="hm-kb">${KB.map(row=>`<div class="hm-kb-row">${row.map(l=>{
+            const s=guessed.has(l)?(word.includes(l)?'ok':'bad'):'';
+            return `<button class="hm-key ${s}" ${guessed.has(l)?'disabled':''} onclick="fhmGuess('${l}')">${l}</button>`;
+          }).join('')}</div>`).join('')}</div>`}
+      </div>
+    </div>`;
+  const cv=document.getElementById('fhm-cv');
+  if(cv)fhmDraw(cv.getContext('2d'),wrong,maxWrong);
+}
+
+function fhmDraw(cx,wrong,max){
+  const W=200,H=240;
+  cx.clearRect(0,0,W,H);
+  cx.strokeStyle='rgba(167,139,250,.7)';cx.lineWidth=2.5;cx.lineCap='round';
+  cx.beginPath();cx.moveTo(20,H-15);cx.lineTo(W-20,H-15);cx.stroke();
+  cx.beginPath();cx.moveTo(50,H-15);cx.lineTo(50,20);cx.stroke();
+  cx.beginPath();cx.moveTo(50,20);cx.lineTo(130,20);cx.stroke();
+  cx.beginPath();cx.moveTo(130,20);cx.lineTo(130,45);cx.stroke();
+  if(wrong<1)return;
+  cx.strokeStyle='rgba(248,113,113,.85)';cx.lineWidth=2;
+  cx.beginPath();cx.arc(130,57,12,0,Math.PI*2);cx.stroke();
+  if(wrong<2)return;
+  cx.beginPath();cx.moveTo(130,69);cx.lineTo(130,115);cx.stroke();
+  if(wrong<3)return;
+  cx.beginPath();cx.moveTo(130,80);cx.lineTo(108,100);cx.stroke();
+  if(wrong<4)return;
+  cx.beginPath();cx.moveTo(130,80);cx.lineTo(152,100);cx.stroke();
+  if(wrong<5)return;
+  cx.beginPath();cx.moveTo(130,115);cx.lineTo(108,140);cx.stroke();
+  if(wrong<6)return;
+  cx.beginPath();cx.moveTo(130,115);cx.lineTo(152,140);cx.stroke();
+  cx.lineWidth=1.5;
+  cx.beginPath();cx.moveTo(123,53);cx.lineTo(126,56);cx.moveTo(126,53);cx.lineTo(123,56);cx.stroke();
+  cx.beginPath();cx.moveTo(134,53);cx.lineTo(137,56);cx.moveTo(137,53);cx.lineTo(134,56);cx.stroke();
+  cx.beginPath();cx.arc(130,62,4,0,Math.PI,false);cx.stroke();
+}
+
+function fhmGuess(l){
+  if(FHM.guessed.has(l))return;
+  FHM.guessed.add(l);
+  const word=FHM.words[FHM.idx].word;
+  if(!word.includes(l))FHM.wrong++;
+  if(word.split('').every(c=>FHM.guessed.has(c)))
+    FHM.score+=Math.max(20,100-FHM.wrong*15);
+  renderFHM();
+}
+
+function fhmNext(){
+  document.removeEventListener('keydown',window._fhmKey);
+  FHM.idx++;FHM.wrong=0;FHM.guessed=new Set();
+  if(FHM.idx>=FHM.words.length){
+    FLOW_SCORE.hangman=FHM.score;
+    showT2();
+  } else {
+    document.addEventListener('keydown',window._fhmKey);
+    renderFHM();
+  }
+}
+
+function showT2(){
+  updateFlowProgress(1);showFvPanel('fvp-t2');
+  const p2=FLOW_SCORE.explorer+FLOW_SCORE.memory;
+  document.getElementById('fvp-t2').innerHTML=`
+    <div class="phase-transition">
+      <div class="pt-phase-done">🪶</div>
+      <div class="hub-lbl" style="color:#60A5FA;text-align:center">Erarbeitung abgeschlossen</div>
+      <div class="pt-h">Du kennst jetzt die Vogelfeder!</div>
+      <p class="pt-sub">Du hast alle Teile entdeckt und Struktur-Funktions-Paare geübt. Jetzt wird's ernst — 5 Fragen gegen den Boss!</p>
+      <div class="pt-score">${p2} Punkte</div>
+      <div class="pt-next">🦅 Weiter: Besiege den Prüfungs-Adler in 5 Fragen!</div>
+      <button class="continue-btn" onclick="startBoss()">Zum Boss Fight →</button>
+    </div>`;
+}
+
+// ── PHASE 3: BOSS FIGHT ──
+const BOSS_QS=[
+  {q:'Was ist die Aufgabe der Häkchen an den Federästen?',opts:['Machen die Feder bunt','Verhaken sich wie Klettverschluss — halten die Federfläche zusammen','Produzieren das Bürzelöl','Geben dem Schaft seine Form'],ok:1},
+  {q:'Woher stammt das Öl, das Vögel beim Putzen verteilen?',opts:['Aus Drüsen im Schnabel','Aus dem Blut der Federäste','Aus der Bürzeldrüse am Schwanzansatz','Aus dem Körperschweiß'],ok:2},
+  {q:'Was passiert, wenn die Federäste ungeordnet sind?',opts:['Der Vogel wird schneller','Luftstrom wird gestört, Auftrieb sinkt','Federn wachsen schneller nach','Nichts — Feder funktioniert trotzdem'],ok:1},
+  {q:'Welche Struktur ist die stabile Mittelachse der Vogelfeder?',opts:['Die Häkchen','Die Bürzeldrüse','Der Schaft','Die Federäste'],ok:2},
+  {q:'Was bewirkt das Bürzelöl auf der Federoberfläche?',opts:['Macht die Federn schwerer','Lässt Wasser und Schmutz abperlen','Verbindet die Federäste fest','Färbt die Federn'],ok:1},
+];
+let BOSS_STATE={};
+
+function startBoss(){
+  updateFlowProgress(2);
+  BOSS_STATE={idx:0,hp:100,lives:3,score:0,locked:false};
+  showFvPanel('fvp-boss');renderBoss();
+}
+function renderBoss(){
+  const s=BOSS_STATE;const q=BOSS_QS[s.idx];
+  const hpPct=Math.max(0,s.hp);
+  const hpCls=hpPct>60?'':hpPct>30?' mid':' low';
+  document.getElementById('fvp-boss').innerHTML=`
+    <div class="ph-lbl" style="color:#22C55E;text-align:center">③ Sicherung</div>
+    <div class="boss-wrap">
+      <div class="boss-arena">
+        <div class="boss-name">🦅 Prüfungs-Adler</div>
+        <div class="boss-emoji" id="boss-emoji">🦅</div>
+        <div class="boss-hp-txt">HP: ${s.hp}%</div>
+        <div class="boss-hp-bar"><div class="boss-hp-fill${hpCls}" id="boss-hp-fill" style="width:${hpPct}%"></div></div>
+        <div class="boss-lives">${'❤️'.repeat(s.lives)}${'🖤'.repeat(3-s.lives)}</div>
+      </div>
+      <div class="boss-qnum">Frage ${s.idx+1} / ${BOSS_QS.length}</div>
+      <div class="boss-q">${q.q}</div>
+      <div class="boss-opts">${q.opts.map((o,i)=>`
+        <button class="boss-opt" id="bopt${i}" onclick="answerBoss(${i})">
+          <div class="boss-olbl">${String.fromCharCode(65+i)}</div>${o}
+        </button>`).join('')}</div>
+      <div class="boss-fb" id="boss-fb"></div>
+    </div>`;
+}
+function answerBoss(i){
+  const s=BOSS_STATE;if(s.locked)return;s.locked=true;
+  const q=BOSS_QS[s.idx];const ok=i===q.ok;
+  document.querySelectorAll('.boss-opt').forEach(b=>b.disabled=true);
+  document.getElementById('bopt'+i).className='boss-opt '+(ok?'ok':'bad');
+  if(!ok)document.getElementById('bopt'+q.ok).className='boss-opt ok';
+  const fb=document.getElementById('boss-fb');
+  if(ok){
+    s.score+=200;s.hp=Math.max(0,s.hp-20);
+    const em=document.getElementById('boss-emoji');if(em){em.classList.remove('hit');void em.offsetWidth;em.classList.add('hit');}
+    fb.style.color='#4ADE80';fb.textContent='✓ Treffer! Der Adler verliert HP!';
+  } else {
+    s.lives--;fb.style.color='#F87171';fb.textContent='✗ Falsch! Du verlierst ein Leben!';
+  }
+  setTimeout(()=>{
+    s.idx++;s.locked=false;
+    if(s.lives<=0)endBoss(false);
+    else if(s.idx>=BOSS_QS.length)endBoss(true);
+    else renderBoss();
+  },1600);
+}
+function endBoss(won){
+  FLOW_SCORE.boss=won?BOSS_STATE.score:Math.floor(BOSS_STATE.score*.6);
+  showFlowResult(won);
+}
+
+// ── FLOW RESULT ──
+function showFlowResult(won){
+  updateFlowProgress(3);showFvPanel('fvp-result');
+  const total=Object.values(FLOW_SCORE).reduce((a,b)=>a+b,0);
+  const stars=total>=600?'⭐⭐⭐':total>=380?'⭐⭐':'⭐';
+  const grade=total>=600?'Hervorragend!':total>=380?'Gut gemacht!':'Weiter üben!';
+  const sub=total>=600?'Du hast alles verstanden — Vogelfeder-Experte!':total>=380?'Gutes Verständnis der Gefiederpflege.':'Schau nochmal in den Text und spiel den Flow nochmal!';
+
+  const hypHTML=HYP_SAVED.length>0?`
+    <div style="margin-bottom:28px">
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#A78BFA;text-align:center;margin-bottom:14px">💭 Deine Vermutungen — jetzt aufgelöst</div>
+      ${HYP_SAVED.map(h=>`
+        <div style="border:1px solid var(--bd);border-radius:13px;overflow:hidden;margin-bottom:12px">
+          <div style="background:rgba(108,59,245,.1);border-bottom:1px solid rgba(108,59,245,.2);padding:12px 15px">
+            <div style="font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#A78BFA;margin-bottom:5px">💭 Deine Vermutung</div>
+            <div style="font-size:.85rem;color:var(--t);line-height:1.6;font-style:italic">"${h.txt}"</div>
+          </div>
+          <div style="background:rgba(34,197,94,.07);padding:12px 15px">
+            <div style="font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4ADE80;margin-bottom:5px">✓ Die Erklärung</div>
+            <div style="font-size:.85rem;color:var(--m);line-height:1.6">${h.reveal}</div>
+          </div>
+        </div>`).join('')}
+    </div>`:''
+
+  document.getElementById('fvp-result').innerHTML=`
+    <div class="flow-result">
+      <div class="flow-res-stars">${stars}</div>
+      <div class="flow-tag">✓ Lernziel bearbeitet</div>
+      <div class="flow-res-h">${grade}</div>
+      <div class="flow-res-sub">${sub}</div>
+      ${hypHTML}
+      <div class="flow-res-breakdown">
+        <div class="flow-res-row"><span class="lbl">① Einstieg – Hypothesen</span><span class="val">${FLOW_SCORE.einstieg} Pkt</span></div>
+        <div class="flow-res-row"><span class="lbl">② Feder-Explorer</span><span class="val">${FLOW_SCORE.explorer} Pkt</span></div>
+        <div class="flow-res-row"><span class="lbl">② Mini-Memory</span><span class="val">${FLOW_SCORE.memory} Pkt</span></div>
+        <div class="flow-res-row"><span class="lbl">② Vokabel-Hangman</span><span class="val">${FLOW_SCORE.hangman} Pkt</span></div>
+        <div class="flow-res-row"><span class="lbl">③ Boss Fight</span><span class="val">${FLOW_SCORE.boss} Pkt</span></div>
+        <div class="flow-res-total"><span>Gesamt</span><span class="val">${total} Punkte</span></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="continue-btn" onclick="startFlow()">↺ Nochmal spielen</button>
+        <button class="hub-btn" onclick="exitFlow()">← Alle Spiele</button>
+      </div>
+    </div>`;
+}
+
+function endRF(){
+  document.getElementById('rf-game').style.display='none';const r=document.getElementById('rf-res');r.style.display='block';
+  const ok=RF.results.filter(Boolean).length,pct=Math.round(ok/RF.total*100);
+  r.innerHTML=`<div class="result"><div class="res-icon">${pct>=80?'⚡':pct>=60?'👍':'😬'}</div><div class="res-title">${pct>=80?'Blitzschnell!':pct>=60?'Gut gemacht!':'Weiter üben'}</div><div class="res-sub">${ok} von ${RF.total} richtig</div><div class="res-score">${RF.score} Pkt</div><div class="res-btns"><button class="retry-btn" onclick="openGame('rf','Richtig oder Falsch')">↺ Nochmal</button><button class="hub-btn" onclick="showHub()">Alle Spiele</button></div></div>`;
+}
+</script>
+</body>
+</html>

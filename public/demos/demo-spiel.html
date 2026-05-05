@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduGame AI – Mission Zellkern</title>
+<style>
+:root{
+  --bg:#07101f;--surface:#0d1a2e;--s2:#122035;--border:#1a3050;
+  --accent:#38bdf8;--purple:#a78bfa;--green:#34d399;--yellow:#fbbf24;
+  --orange:#fb923c;--red:#f87171;--text:#e2e8f0;--muted:#4a6580;--r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;width:100%;max-width:780px;padding:14px;max-height:100vh;overflow-y:auto}
+.wrap::-webkit-scrollbar{width:4px}.wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.screen{display:none;animation:fu .35s ease}
+.screen.active{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+
+/* HUD */
+.hud{display:flex;align-items:center;justify-content:space-between;padding:9px 18px;background:var(--surface);border:1px solid var(--border);border-radius:999px;margin-bottom:12px}
+.hud-phase{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+.ph-l{color:var(--green)}.ph-p{color:var(--yellow)}.ph-t{color:var(--red)}
+.hud-r{display:flex;align-items:center;gap:12px}
+.xpb{font-size:13px;font-weight:700;color:var(--yellow)}
+.lives{font-size:15px;letter-spacing:1px}
+.pbar{height:5px;background:var(--s2);border-radius:999px;margin-bottom:16px;overflow:hidden}
+.pfill{height:100%;border-radius:999px;transition:width .5s}
+.pfl{background:linear-gradient(90deg,var(--green),#6ee7b7)}
+.pfp{background:linear-gradient(90deg,var(--yellow),var(--orange))}
+.pft{background:linear-gradient(90deg,var(--red),#fca5a5)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 22px;border-radius:999px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,var(--purple));color:#fff;box-shadow:0 4px 18px rgba(59,130,246,.3)}
+.btn-blue:hover{box-shadow:0 4px 28px rgba(59,130,246,.5);transform:translateY(-1px)}
+.btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;box-shadow:0 3px 14px rgba(16,185,129,.3)}
+.btn-green:hover{transform:translateY(-1px)}
+.btn-yellow{background:linear-gradient(135deg,var(--yellow),var(--orange));color:#fff}
+.btn-yellow:hover{transform:translateY(-1px)}
+.btn-ghost{background:var(--s2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border)}
+.btn-block{width:100%}
+.btn-row{display:flex;gap:9px;margin-top:16px}.btn-row .btn{flex:1}
+
+/* START */
+.start-badge{display:inline-block;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);border-radius:999px;padding:4px 16px;font-size:11px;font-weight:800;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.start-h1{font-size:40px;font-weight:900;background:linear-gradient(135deg,#fff,#7dd3fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-bottom:16px}
+.phase-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:20px}
+.phase-card{padding:14px 8px;background:var(--s2);border:1px solid var(--border);border-radius:11px;text-align:center}
+.pc-icon{font-size:26px;margin-bottom:5px}
+.pc-name{font-size:12px;font-weight:700;margin-bottom:2px}
+.pc-desc{font-size:10px;color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;justify-content:center}
+.tag{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:4px 11px;font-size:11px;color:var(--muted)}
+
+/* STORY */
+.story-ship{font-size:56px;text-align:center;margin-bottom:12px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.story-h{font-size:22px;font-weight:800;text-align:center;margin-bottom:5px;background:linear-gradient(135deg,#fff,#7dd3fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.story-sub{text-align:center;color:var(--accent);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.char-row{display:flex;align-items:flex-end;gap:11px;margin-bottom:10px}
+.char-row.r{flex-direction:row-reverse}
+.av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid var(--border);flex-shrink:0}
+.av-l{background:rgba(56,189,248,.2);border-color:rgba(56,189,248,.4)}
+.av-m{background:rgba(52,211,153,.2);border-color:rgba(52,211,153,.4)}
+.bub{max-width:82%;padding:10px 14px;border-radius:13px;font-size:13px;line-height:1.6}
+.bub-l{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-bottom-left-radius:3px}
+.bub-m{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18);border-bottom-right-radius:3px}
+.cn{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.cn-l{color:#7dd3fc}.cn-m{color:#6ee7b7}
+
+/* ========== CELL EXPLORER ========== */
+.explorer{display:flex;flex-direction:column;gap:14px}
+.disc-bar{display:flex;align-items:center;justify-content:space-between}
+.disc-count{font-size:13px;font-weight:700;color:var(--muted)}
+.disc-count span{color:var(--green)}
+.disc-hint{font-size:11px;color:var(--muted);font-style:italic}
+
+/* SVG cell wrapper */
+.cell-scene{width:100%;position:relative}
+.cell-svg{width:100%;height:auto;cursor:default}
+
+/* Hotspot buttons overlaid on SVG */
+.hs-wrap{position:absolute;top:0;left:0;width:100%;height:100%}
+.hs{position:absolute;width:24px;height:24px;border-radius:50%;background:rgba(251,191,36,.95);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;cursor:pointer;transform:translate(-50%,-50%);transition:all .2s;z-index:10}
+.hs:hover{transform:translate(-50%,-50%) scale(1.2)}
+.hs.pulsing{animation:hsPulse 1.6s ease-in-out infinite}
+.hs.done{background:var(--green);color:#fff;animation:none}
+@keyframes hsPulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.6)}50%{box-shadow:0 0 0 7px rgba(251,191,36,0)}}
+
+/* Info panel */
+.info-panel{background:var(--s2);border:1px solid var(--border);border-radius:13px;padding:18px;transition:border-color .3s;min-height:120px}
+.ip-default{text-align:center;padding:20px 0;color:var(--muted);font-size:13px}
+.ip-default .arrow{font-size:28px;margin-bottom:6px;animation:bounce 1.5s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.ip-head{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.ip-icon{font-size:26px}
+.ip-title{font-size:16px;font-weight:800;color:#fff}
+.ip-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.ip-body{font-size:13px;line-height:1.7;color:var(--text);margin-bottom:12px}
+.ip-body strong{color:var(--accent)}
+
+/* ========== PROCESS ANIMATIONS ========== */
+.process-anim{width:100%;border-radius:10px;overflow:hidden;margin-bottom:12px;background:var(--surface);border:1px solid var(--border)}
+.anim-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:6px 12px;border-bottom:1px solid var(--border)}
+
+/* DNA helix */
+.dna-container{height:80px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,rgba(167,139,250,.1),transparent)}
+.dna-strand{position:absolute;width:100%;height:100%}
+.helix-dot{position:absolute;width:10px;height:10px;border-radius:50%}
+@keyframes helixLeft{0%{left:0%;top:50%;transform:translateY(calc(-50% + 28px*sin(0)))}100%{left:100%;}}
+.bp-line{position:absolute;height:2px;background:rgba(167,139,250,.25);transform-origin:left center}
+
+/* Mito animation */
+.mito-anim{height:80px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,rgba(251,191,36,.08),transparent)}
+.particle{position:absolute;border-radius:50%;font-size:12px;animation:particleMove linear infinite}
+@keyframes particleMove{0%{transform:translateX(0) translateY(0);opacity:1}100%{transform:translateX(var(--dx)) translateY(var(--dy));opacity:0}}
+.mito-label{position:absolute;font-size:10px;font-weight:700}
+
+/* Membrane animation */
+.membrane-anim{height:80px;position:relative;overflow:hidden}
+.lipid-layer{position:absolute;display:flex;gap:3px;left:0;right:0}
+.lipid{display:flex;flex-direction:column;align-items:center;gap:1px}
+.lipid-head{width:10px;height:10px;border-radius:50%;background:rgba(56,189,248,.6)}
+.lipid-tail{width:2px;height:14px;background:rgba(56,189,248,.25);border-radius:1px}
+.mol-particle{position:absolute;font-size:14px;animation:molMove linear infinite}
+@keyframes molMove{0%{top:5px;opacity:1}50%{opacity:1}100%{top:70px;opacity:.2}}
+.mol-block{position:absolute;font-size:14px;animation:molBounce ease-in-out infinite}
+@keyframes molBounce{0%,100%{top:10px}50%{top:20px}}
+
+/* Ribosom animation */
+.ribo-anim{height:80px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,rgba(52,211,153,.06),transparent)}
+.mrna-line{position:absolute;height:4px;background:linear-gradient(90deg,transparent,rgba(52,211,153,.5),transparent);animation:mrnaScroll 3s linear infinite}
+@keyframes mrnaScroll{0%{left:-100%;width:200%}100%{left:100%;}}
+.aa-dot{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid var(--green);animation:aaAppear .5s ease forwards;opacity:0}
+@keyframes aaAppear{to{opacity:1}}
+
+/* Golgi animation */
+.golgi-anim{height:80px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,rgba(251,113,133,.06),transparent)}
+.vesicle{position:absolute;font-size:16px;animation:vesicleMove linear infinite}
+@keyframes vesicleMove{0%{left:10%;top:15px;opacity:1;transform:scale(.6)}50%{transform:scale(1)}100%{left:85%;top:50px;opacity:0;transform:scale(.4)}}
+
+/* Mini games */
+.mg-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.mc2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mc2-btn{padding:10px 8px;background:var(--surface);border:2px solid var(--border);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;color:var(--text)}
+.mc2-btn:hover{border-color:var(--accent);background:rgba(56,189,248,.07)}
+.mc2-btn.correct{border-color:var(--green)!important;background:rgba(52,211,153,.12)!important;color:var(--green)}
+.mc2-btn.wrong{border-color:var(--red)!important;background:rgba(248,113,113,.08)!important;color:var(--red);animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* ATP clicker */
+.atp-bar-wrap{height:26px;background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px;position:relative}
+.atp-fill{height:100%;background:linear-gradient(90deg,var(--yellow),var(--orange));border-radius:7px;transition:width .12s;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;font-size:10px;font-weight:700;color:#000;min-width:30px}
+.atp-btn{width:100%;padding:12px;font-size:18px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(234,88,12,.08));border:2px solid rgba(251,191,36,.25);border-radius:10px;cursor:pointer;transition:all .1s;font-weight:700;color:var(--yellow);display:flex;align-items:center;justify-content:center;gap:7px;font-family:inherit}
+.atp-btn:active{transform:scale(.97);border-color:var(--yellow)}
+.atp-btn:disabled{opacity:.4;pointer-events:none}
+
+/* Molecule sorter */
+.mol-row{display:flex;gap:10px;margin-bottom:10px;justify-content:center;flex-wrap:wrap}
+.molecule{display:flex;flex-direction:column;align-items:center;gap:5px}
+.mol-icon-box{font-size:20px;width:44px;height:44px;background:var(--surface);border:2px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.mol-lbl{font-size:10px;font-weight:700}
+.mol-btns{display:flex;gap:4px}
+.mol-btn{padding:3px 9px;border-radius:5px;border:none;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.mol-in{background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)}
+.mol-out{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,133,.3)}
+.mol-btn:hover{transform:scale(1.05)}
+.mol-correct{border-color:var(--green)!important;background:rgba(52,211,153,.12)!important}
+.mol-wrong-box{border-color:var(--red)!important;animation:shake .3s}
+
+/* Chain */
+.chain-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.dn{width:48px;height:36px;border-radius:8px;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--muted);text-align:center;line-height:1.2}
+.dn.active-node{border-color:var(--accent);color:var(--accent);animation:nodePulse 1.2s infinite}
+@keyframes nodePulse{0%,100%{box-shadow:0 0 0 0 rgba(56,189,248,.4)}50%{box-shadow:0 0 0 5px rgba(56,189,248,0)}}
+.dn.linked{border-color:var(--green);background:rgba(52,211,153,.1);color:var(--green)}
+.dn.bad-node{border-color:var(--red);animation:shake .3s}
+.cc{color:var(--border);font-size:16px;font-weight:700}
+.cc.linked{color:var(--green)}
+
+/* Golgi steps */
+.g-steps{display:flex;align-items:center;gap:5px;margin-bottom:10px}
+.g-step{flex:1;padding:8px 4px;background:var(--surface);border:2px solid var(--border);border-radius:8px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);transition:all .3s}
+.g-step.active{border-color:var(--accent);color:var(--accent);background:rgba(56,189,248,.07)}
+.g-step.done{border-color:var(--green);color:var(--green);background:rgba(52,211,153,.09)}
+.g-arr{font-size:14px;color:var(--muted);flex-shrink:0}
+
+/* Brain button */
+.brain-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:12px;margin-top:12px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(56,189,248,.08));border:1px solid rgba(52,211,153,.3);border-radius:10px;font-size:13px;font-weight:700;color:#34d399;cursor:pointer;transition:all .2s;font-family:inherit}
+.brain-btn:hover{background:linear-gradient(135deg,rgba(52,211,153,.2),rgba(56,189,248,.12));transform:translateY(-1px)}
+.brain-btn.saved{background:rgba(52,211,153,.15);color:#fff;border-color:var(--green);pointer-events:none}
+
+/* Feedback */
+.fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.6;display:none}
+.fb.show{display:block;animation:fu .2s}
+.fb-ok{background:rgba(52,211,153,.09);border:1px solid rgba(52,211,153,.25);color:#6ee7b7}
+.fb-err{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);color:#fca5a5}
+.fb-hint{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);color:#fcd34d}
+
+/* ========== PRACTICE / TEST ========== */
+.q-badge{display:inline-block;border-radius:999px;padding:3px 13px;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:9px}
+.qb-p{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.25)}
+.qb-t{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+.q-text{font-size:17px;font-weight:700;line-height:1.45;color:#fff;margin-bottom:12px}
+.hint-tog{background:none;border:1px dashed var(--border);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit}
+.hint-tog:hover{border-color:var(--yellow);color:var(--yellow)}
+.hint-box{margin-top:7px;padding:8px 12px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:7px;font-size:11px;color:#fcd34d;display:none}
+.hint-box.show{display:block;animation:fu .2s}
+
+/* Options */
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.opt{display:flex;align-items:center;gap:12px;padding:12px 15px;background:var(--s2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;font-size:13px}
+.opt:hover{border-color:var(--accent);background:rgba(56,189,248,.05)}
+.opt.sel{border-color:var(--accent);background:rgba(56,189,248,.1)}
+.opt.correct{border-color:var(--green)!important;background:rgba(52,211,153,.09)!important;animation:pop .3s}
+.opt.wrong{border-color:var(--red)!important;background:rgba(248,113,113,.07)!important;animation:shake .3s}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+.opt-l{width:28px;height:28px;background:var(--surface);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;transition:all .15s}
+.opt.correct .opt-l{background:var(--green);border-color:var(--green);color:#000}
+.opt.wrong .opt-l{background:var(--red);border-color:var(--red);color:#fff}
+
+/* Gap */
+.gap-text{font-size:16px;line-height:2.8;margin-top:12px}
+.gap-slot{display:inline-block;min-width:100px;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;text-align:center;padding:0 5px;cursor:pointer;transition:all .2s}
+.gap-slot.filled{border-color:var(--green);color:var(--green)}
+.gap-slot.active-slot{border-bottom-width:3px;border-color:var(--purple)}
+.wb{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;padding:11px;background:var(--s2);border:1px dashed var(--border);border-radius:8px}
+.chip{padding:5px 12px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.used{opacity:.2;pointer-events:none}
+
+/* Match */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.mg-hdr{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;text-align:center}
+.mi{padding:9px 10px;background:var(--s2);border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;min-height:44px;display:flex;align-items:center;justify-content:center}
+.mi:hover{border-color:var(--accent)}
+.mi.active{border-color:var(--accent);background:rgba(56,189,248,.1)}
+.mi.matched{border-color:var(--green);background:rgba(52,211,153,.09);pointer-events:none;color:#6ee7b7}
+.mi.bad{border-color:var(--red);animation:shake .3s}
+
+/* Transition */
+.trans{text-align:center;padding:20px 0}
+.trans-icon{font-size:58px;margin-bottom:12px;animation:bounceIn .5s}
+@keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+.trans-title{font-size:22px;font-weight:800;margin-bottom:5px}
+.trans-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.xp-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:999px;padding:6px 16px;font-size:13px;font-weight:800;color:var(--yellow);margin-bottom:20px}
+
+/* Result */
+.r-hero{text-align:center;padding:14px 0}
+.r-trophy{font-size:60px;margin-bottom:10px;animation:bounceIn .5s}
+.r-pct{font-size:48px;font-weight:900;background:linear-gradient(135deg,var(--yellow),#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.r-label{font-size:12px;color:var(--muted);margin-bottom:18px}
+.r-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.r-stat{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.rs-num{font-size:20px;font-weight:800;color:#fff;margin-bottom:2px}
+.rs-lbl{font-size:10px;color:var(--muted)}
+.r-phases{background:var(--s2);border-radius:11px;overflow:hidden;margin-bottom:16px}
+.r-phases h3{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:11px 15px;border-bottom:1px solid var(--border)}
+.r-row{display:flex;align-items:center;padding:10px 15px;border-bottom:1px solid var(--border)}
+.r-row:last-child{border-bottom:none}
+.r-name{font-size:13px;font-weight:600;min-width:90px}
+.r-bar{flex:1;height:5px;background:var(--border);border-radius:999px;overflow:hidden;margin:0 10px}
+.r-fill{height:100%;border-radius:999px;transition:width .8s}
+.r-pctlbl{font-size:11px;font-weight:700;min-width:30px;text-align:right}
+.teacher-note{background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.15);border-radius:8px;padding:11px 14px;font-size:12px;color:#7dd3fc;margin-bottom:16px}
+.teacher-note strong{display:block;margin-bottom:2px;color:var(--accent)}
+
+@media(max-width:520px){.card{padding:14px}.match-grid{grid-template-columns:1fr}.r-stats{grid-template-columns:1fr 1fr}.phase-grid{grid-template-columns:1fr}.mc2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="wrap">
+
+<!-- ===== START ===== -->
+<div class="screen active" id="s-start">
+<div class="card">
+  <div style="text-align:center;margin-bottom:18px">
+    <div class="start-badge">EduGame AI · Demo</div>
+    <div class="start-h1">Mission Zellkern 🔬</div>
+  </div>
+  <div class="tags">
+    <span class="tag">🔬 Biologie · Klasse 9</span>
+    <span class="tag">⏱ ~12 Minuten</span>
+    <span class="tag">3 Lernphasen</span>
+  </div>
+  <div class="phase-grid">
+    <div class="phase-card"><div class="pc-icon">🔍</div><div class="pc-name" style="color:var(--green)">Entdecken</div><div class="pc-desc">Interaktive Zell-Grafik mit Animationen</div></div>
+    <div class="phase-card"><div class="pc-icon">✏️</div><div class="pc-name" style="color:var(--yellow)">Üben</div><div class="pc-desc">Aufgaben mit Hinweisen & Feedback</div></div>
+    <div class="phase-card"><div class="pc-icon">🏆</div><div class="pc-name" style="color:var(--red)">Quiz</div><div class="pc-desc">Wissen selbstständig beweisen</div></div>
+  </div>
+  <button class="btn btn-blue btn-block" onclick="SS('s-story')" style="font-size:15px;padding:14px">🚀 Mission starten</button>
+</div>
+</div>
+
+<!-- ===== STORY ===== -->
+<div class="screen" id="s-story">
+<div class="card">
+  <div class="story-ship">🚀</div>
+  <div class="story-h">Notfall an Bord!</div>
+  <div class="story-sub">Intro · vor der Erkundung</div>
+  <div style="margin-bottom:14px">
+    <div class="char-row">
+      <div class="av av-l">👩‍🔬</div>
+      <div class="bub bub-l"><div class="cn cn-l">Dr. Lena</div>Das Schiff <strong>Mikros</strong> ist in eine menschliche Zelle eingedrungen. Alarm! Die Energieversorgung bricht zusammen. Wir müssen die Zelle verstehen!</div>
+    </div>
+    <div class="char-row r">
+      <div class="av av-m">👩‍✈️</div>
+      <div class="bub bub-m"><div class="cn cn-m">Pilotin Maya</div>Überall komische Strukturen… was ist das alles? Wir brauchen dich als wissenschaftliches Genie! 🧬</div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="SS('s-start')">← Zurück</button>
+    <button class="btn btn-green" onclick="startLearn()">🔍 Zelle erkunden</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== LEARN: CELL EXPLORER ===== -->
+<div class="screen" id="s-learn">
+  <div class="hud">
+    <div class="hud-phase ph-l">🔍 Entdecken</div>
+    <div class="hud-r"><div class="xpb">⭐ <span id="l-xp">0</span> XP</div></div>
+  </div>
+  <div class="pbar"><div class="pfill pfl" id="l-prog" style="width:0%"></div></div>
+  <div class="card">
+    <div class="explorer">
+      <div class="disc-bar">
+        <div class="disc-count"><span id="disc-n">0</span> / 5 entdeckt</div>
+        <div class="disc-hint">👆 Klick auf ein <strong style="color:var(--yellow)">?</strong> in der Zelle</div>
+      </div>
+
+      <!-- SVG CELL DIAGRAM -->
+      <div class="cell-scene" id="cell-scene">
+        <svg class="cell-svg" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" id="cell-svg">
+          <defs>
+            <filter id="glow-purple"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="glow-yellow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="glow-green"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <radialGradient id="cyto-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#1a3a5c" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#07101f" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="nucleus-grad" cx="40%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.08"/>
+            </radialGradient>
+            <radialGradient id="mito-grad" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#fcd34d" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.08"/>
+            </radialGradient>
+          </defs>
+
+          <!-- CYTOPLASM FILL -->
+          <ellipse cx="250" cy="150" rx="238" ry="138" fill="url(#cyto-grad)"/>
+
+          <!-- CELL MEMBRANE (outer ring) -->
+          <ellipse cx="250" cy="150" rx="238" ry="138" fill="none" stroke="rgba(56,189,248,0.5)" stroke-width="3" stroke-dasharray="12,5"/>
+          <ellipse cx="250" cy="150" rx="231" ry="131" fill="none" stroke="rgba(56,189,248,0.15)" stroke-width="2"/>
+          <!-- membrane proteins -->
+          <circle cx="80" cy="138" r="5" fill="rgba(56,189,248,0.6)"/>
+          <circle cx="85" cy="162" r="4" fill="rgba(56,189,248,0.4)"/>
+          <circle cx="415" cy="130" r="5" fill="rgba(56,189,248,0.6)"/>
+          <circle cx="420" cy="155" r="4" fill="rgba(56,189,248,0.4)"/>
+          <circle cx="250" cy="13" r="4" fill="rgba(56,189,248,0.5)"/>
+          <circle cx="265" cy="288" r="4" fill="rgba(56,189,248,0.5)"/>
+
+          <!-- ENDOPLASMIC RETICULUM (rough, with ribosomes) -->
+          <path d="M 155,90 Q 175,70 195,90 Q 215,110 235,90 Q 255,70 270,85" fill="none" stroke="rgba(52,211,153,0.3)" stroke-width="2.5"/>
+          <!-- ribosome dots on ER -->
+          <circle cx="165" cy="88" r="3.5" fill="rgba(52,211,153,0.6)"/>
+          <circle cx="185" cy="83" r="3.5" fill="rgba(52,211,153,0.6)"/>
+          <circle cx="205" cy="95" r="3.5" fill="rgba(52,211,153,0.6)"/>
+          <circle cx="225" cy="84" r="3.5" fill="rgba(52,211,153,0.6)"/>
+          <circle cx="248" cy="78" r="3.5" fill="rgba(52,211,153,0.6)"/>
+
+          <!-- Free ribosomes cluster -->
+          <g id="svg-ribo" style="cursor:pointer" onclick="selectOrg('ribo')">
+            <circle cx="340" cy="85" r="4" fill="rgba(52,211,153,0.5)"/>
+            <circle cx="352" cy="78" r="4" fill="rgba(52,211,153,0.5)"/>
+            <circle cx="364" cy="87" r="4" fill="rgba(52,211,153,0.5)"/>
+            <circle cx="346" cy="94" r="4" fill="rgba(52,211,153,0.5)"/>
+            <circle cx="358" cy="100" r="4" fill="rgba(52,211,153,0.5)"/>
+            <circle cx="370" cy="78" r="3" fill="rgba(52,211,153,0.4)"/>
+            <!-- hover area -->
+            <rect x="330" y="68" width="50" height="42" fill="transparent" rx="8"/>
+            <text x="352" y="115" text-anchor="middle" font-size="9" fill="rgba(52,211,153,0.6)" font-family="sans-serif">Ribosomen</text>
+          </g>
+
+          <!-- GOLGI APPARATUS -->
+          <g id="svg-golgi" style="cursor:pointer" onclick="selectOrg('golgi')">
+            <path d="M 95,200 Q 125,193 155,200" fill="none" stroke="rgba(251,113,133,0.6)" stroke-width="6" stroke-linecap="round"/>
+            <path d="M 100,212 Q 128,205 156,212" fill="none" stroke="rgba(251,113,133,0.5)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 105,222 Q 130,215 153,222" fill="none" stroke="rgba(251,113,133,0.4)" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 110,230 Q 130,224 150,230" fill="none" stroke="rgba(251,113,133,0.3)" stroke-width="3" stroke-linecap="round"/>
+            <!-- vesicles -->
+            <circle cx="163" cy="205" r="6" fill="none" stroke="rgba(251,113,133,0.5)" stroke-width="1.5"/>
+            <circle cx="172" cy="215" r="5" fill="none" stroke="rgba(251,113,133,0.4)" stroke-width="1.5"/>
+            <rect x="82" y="185" width="92" height="55" fill="transparent" rx="8"/>
+            <text x="125" y="248" text-anchor="middle" font-size="9" fill="rgba(251,113,133,0.7)" font-family="sans-serif">Golgi-Apparat</text>
+          </g>
+
+          <!-- MITOCHONDRION 1 -->
+          <g id="svg-mito1" style="cursor:pointer" onclick="selectOrg('mito')">
+            <ellipse cx="105" cy="100" rx="42" ry="22" fill="url(#mito-grad)" stroke="rgba(251,191,36,0.55)" stroke-width="2"/>
+            <ellipse cx="105" cy="100" rx="34" ry="14" fill="none" stroke="rgba(251,191,36,0.25)" stroke-width="1.5"/>
+            <!-- cristae -->
+            <path d="M 85,93 Q 88,100 85,107" fill="none" stroke="rgba(251,191,36,0.35)" stroke-width="1.5"/>
+            <path d="M 97,89 Q 100,100 97,111" fill="none" stroke="rgba(251,191,36,0.35)" stroke-width="1.5"/>
+            <path d="M 113,89 Q 116,100 113,111" fill="none" stroke="rgba(251,191,36,0.35)" stroke-width="1.5"/>
+            <text x="105" y="133" text-anchor="middle" font-size="9" fill="rgba(251,191,36,0.7)" font-family="sans-serif">Mitochondrium</text>
+          </g>
+
+          <!-- MITOCHONDRION 2 -->
+          <g id="svg-mito2" style="cursor:pointer" onclick="selectOrg('mito')">
+            <ellipse cx="370" cy="210" rx="38" ry="19" fill="url(#mito-grad)" stroke="rgba(251,191,36,0.45)" stroke-width="2" transform="rotate(-20,370,210)"/>
+            <ellipse cx="370" cy="210" rx="29" ry="11" fill="none" stroke="rgba(251,191,36,0.2)" stroke-width="1.5" transform="rotate(-20,370,210)"/>
+            <path d="M 352,205 Q 355,212 352,220" fill="none" stroke="rgba(251,191,36,0.3)" stroke-width="1.5" transform="rotate(-20,370,210)"/>
+            <path d="M 366,203 Q 369,212 366,221" fill="none" stroke="rgba(251,191,36,0.3)" stroke-width="1.5" transform="rotate(-20,370,210)"/>
+          </g>
+
+          <!-- VACUOLE (small) -->
+          <circle cx="400" cy="195" r="22" fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.2)" stroke-width="1.5"/>
+          <text x="400" y="199" text-anchor="middle" font-size="8" fill="rgba(56,189,248,0.4)" font-family="sans-serif">Vakuole</text>
+
+          <!-- LYSOSOME -->
+          <circle cx="310" cy="230" r="14" fill="rgba(248,113,113,0.08)" stroke="rgba(248,113,113,0.3)" stroke-width="1.5"/>
+          <text x="310" y="234" text-anchor="middle" font-size="8" fill="rgba(248,113,113,0.5)" font-family="sans-serif">Lysosom</text>
+
+          <!-- NUCLEUS -->
+          <g id="svg-nucleus" style="cursor:pointer" onclick="selectOrg('nucleus')">
+            <!-- outer membrane -->
+            <ellipse cx="248" cy="155" rx="68" ry="58" fill="url(#nucleus-grad)" stroke="rgba(167,139,250,0.55)" stroke-width="2.5" filter="url(#glow-purple)"/>
+            <!-- inner membrane -->
+            <ellipse cx="248" cy="155" rx="60" ry="50" fill="none" stroke="rgba(167,139,250,0.2)" stroke-width="1.5"/>
+            <!-- nuclear pores -->
+            <circle cx="248" cy="97" r="4" fill="rgba(167,139,250,0.4)" stroke="rgba(167,139,250,0.7)" stroke-width="1"/>
+            <circle cx="248" cy="213" r="4" fill="rgba(167,139,250,0.4)" stroke="rgba(167,139,250,0.7)" stroke-width="1"/>
+            <circle cx="180" cy="155" r="4" fill="rgba(167,139,250,0.4)" stroke="rgba(167,139,250,0.7)" stroke-width="1"/>
+            <circle cx="316" cy="155" r="4" fill="rgba(167,139,250,0.4)" stroke="rgba(167,139,250,0.7)" stroke-width="1"/>
+            <!-- chromatin (DNA) dots -->
+            <circle cx="235" cy="145" r="5" fill="rgba(167,139,250,0.5)"/>
+            <circle cx="258" cy="138" r="4" fill="rgba(167,139,250,0.4)"/>
+            <circle cx="268" cy="162" r="6" fill="rgba(167,139,250,0.45)"/>
+            <circle cx="234" cy="168" r="4" fill="rgba(167,139,250,0.35)"/>
+            <!-- nucleolus -->
+            <circle cx="248" cy="155" r="18" fill="rgba(167,139,250,0.35)" stroke="rgba(167,139,250,0.6)" stroke-width="1.5"/>
+            <text x="248" y="159" text-anchor="middle" font-size="8" fill="rgba(200,180,255,0.9)" font-family="sans-serif">Nucleolus</text>
+            <!-- label -->
+            <text x="248" y="230" text-anchor="middle" font-size="10" fill="rgba(167,139,250,0.8)" font-family="sans-serif" font-weight="bold">Zellkern</text>
+          </g>
+
+          <!-- MEMBRANE CLICK LABEL -->
+          <g id="svg-membrane" style="cursor:pointer" onclick="selectOrg('membrane')">
+            <rect x="430" y="100" width="58" height="36" rx="6" fill="rgba(56,189,248,0.08)" stroke="rgba(56,189,248,0.3)" stroke-width="1.5"/>
+            <text x="459" y="118" text-anchor="middle" font-size="8.5" fill="rgba(56,189,248,0.9)" font-family="sans-serif" font-weight="bold">Zell-</text>
+            <text x="459" y="129" text-anchor="middle" font-size="8.5" fill="rgba(56,189,248,0.9)" font-family="sans-serif" font-weight="bold">membran</text>
+            <line x1="430" y1="118" x2="412" y2="130" stroke="rgba(56,189,248,0.4)" stroke-width="1" stroke-dasharray="3,2"/>
+          </g>
+
+          <!-- Discovered overlays (initially hidden) -->
+          <ellipse id="disc-nucleus" cx="248" cy="155" rx="68" ry="58" fill="none" stroke="rgba(52,211,153,0)" stroke-width="3" style="transition:stroke .4s"/>
+          <ellipse id="disc-mito1" cx="105" cy="100" rx="42" ry="22" fill="none" stroke="rgba(52,211,153,0)" stroke-width="2" style="transition:stroke .4s"/>
+          <ellipse id="disc-mito2" cx="370" cy="210" rx="38" ry="19" fill="none" stroke="rgba(52,211,153,0)" stroke-width="2" transform="rotate(-20,370,210)" style="transition:stroke .4s"/>
+        </svg>
+
+        <!-- HOTSPOT OVERLAYS (positioned via %) -->
+        <div class="hs-wrap" id="hs-wrap">
+          <div class="hs pulsing" id="hs-nucleus" style="left:49.6%;top:51.7%" onclick="selectOrg('nucleus')" title="Zellkern entdecken">?</div>
+          <div class="hs pulsing" id="hs-mito" style="left:21%;top:33%" onclick="selectOrg('mito')" title="Mitochondrium entdecken">?</div>
+          <div class="hs pulsing" id="hs-ribo" style="left:69%;top:24%" onclick="selectOrg('ribo')" title="Ribosomen entdecken">?</div>
+          <div class="hs pulsing" id="hs-golgi" style="left:24%;top:69%" onclick="selectOrg('golgi')" title="Golgi entdecken">?</div>
+          <div class="hs pulsing" id="hs-membrane" style="left:88%;top:38%" onclick="selectOrg('membrane')" title="Zellmembran entdecken">?</div>
+        </div>
+      </div>
+
+      <!-- INFO PANEL -->
+      <div class="info-panel" id="info-panel">
+        <div class="ip-default">
+          <div class="arrow">☝️</div>
+          Tippe auf ein <strong style="color:var(--yellow)">?</strong> in der Zellgrafik, um ein Organell zu entdecken!
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TRANSITION ===== -->
+<div class="screen" id="s-trans">
+<div class="card">
+  <div class="trans">
+    <div class="trans-icon" id="t-icon">🎉</div>
+    <div class="trans-title" id="t-title"></div>
+    <div class="trans-sub" id="t-sub"></div>
+    <div class="xp-chip" id="t-xp"></div>
+    <button class="btn btn-blue btn-block" style="font-size:15px;padding:14px" id="t-btn">Weiter</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== PRACTICE ===== -->
+<div class="screen" id="s-practice">
+  <div class="hud">
+    <div class="hud-phase ph-p">✏️ Üben</div>
+    <div class="hud-r"><div class="lives" id="p-lives">❤️❤️❤️</div><div class="xpb">⭐ <span id="p-xp">0</span> XP</div></div>
+  </div>
+  <div class="pbar"><div class="pfill pfp" id="p-prog" style="width:0%"></div></div>
+  <div class="card" id="p-card"></div>
+</div>
+
+<!-- ===== TEST ===== -->
+<div class="screen" id="s-test">
+  <div class="hud">
+    <div class="hud-phase ph-t">🏆 Quiz</div>
+    <div class="hud-r"><div class="xpb">⭐ <span id="t2-xp">0</span> XP</div></div>
+  </div>
+  <div class="pbar"><div class="pfill pft" id="t-prog" style="width:0%"></div></div>
+  <div class="card" id="t-card"></div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div class="screen" id="s-result">
+<div class="card">
+  <div class="r-hero">
+    <div class="r-trophy" id="r-trophy">🏆</div>
+    <div class="r-pct" id="r-pct">-</div>
+    <div class="r-label">Mission abgeschlossen · Crew gerettet!</div>
+  </div>
+  <div class="r-stats">
+    <div class="r-stat"><div class="rs-num" id="r-correct">-</div><div class="rs-lbl">Quiz richtig</div></div>
+    <div class="r-stat"><div class="rs-num" id="r-xp">-</div><div class="rs-lbl">XP verdient</div></div>
+    <div class="r-stat"><div class="rs-num" id="r-time">-</div><div class="rs-lbl">Minuten</div></div>
+  </div>
+  <div class="r-phases">
+    <h3>Phasen-Auswertung</h3>
+    <div class="r-row"><div class="r-name">🔍 Entdecken</div><div class="r-bar"><div class="r-fill" id="rf-l" style="width:0%;background:var(--green)"></div></div><div class="r-pctlbl" id="rp-l">-</div></div>
+    <div class="r-row"><div class="r-name">✏️ Üben</div><div class="r-bar"><div class="r-fill" id="rf-p" style="width:0%;background:var(--yellow)"></div></div><div class="r-pctlbl" id="rp-p">-</div></div>
+    <div class="r-row"><div class="r-name">🏆 Quiz</div><div class="r-bar"><div class="r-fill" id="rf-t" style="width:0%;background:var(--red)"></div></div><div class="r-pctlbl" id="rp-t">-</div></div>
+  </div>
+  <div class="teacher-note"><strong>📋 Lehrer-Ansicht (Demo)</strong>Im echten Modul siehst du hier alle Schüler-Ergebnisse, Zeitverläufe und häufige Fehler im Dashboard.</div>
+  <button class="btn btn-blue btn-block" onclick="restartGame()" style="font-size:14px;padding:12px">🔄 Nochmal spielen</button>
+</div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+// ================================================
+// ORGANELLE DATA + ANIMATIONS
+// ================================================
+const ORGS = {
+  nucleus: {
+    icon:'🔵', title:'Zellkern (Nukleus)', sub:'Die Kommandozentrale der Zelle',
+    body:'Der Zellkern enthält die <strong>DNA</strong> – die vollständige Bauanleitung des Lebens. Über 2 Meter langer DNA-Strang sind hier zusammengefaltet. Er steuert alle Aktivitäten der Zelle.',
+    anim: 'nucleus',
+    game:'mc2', q:'Was ist die Hauptaufgabe des Zellkerns?',
+    opts:['Energie (ATP) produzieren','DNA speichern & Zelle steuern'],
+    correct:1, okMsg:'✅ Richtig! Zellkern = Kommandozentrale mit DNA-Bauplan.',
+    errMsg:'❌ Energie machen Mitochondrien. Der Kern speichert die DNA!'
+  },
+  mito: {
+    icon:'⚡', title:'Mitochondrien', sub:'Das Kraftwerk der Zelle',
+    body:'Mitochondrien erzeugen <strong>ATP</strong> durch Zellatmung: Glukose + O₂ → ATP + CO₂ + H₂O. Eine Zelle hat bis zu 2.000 Mitochondrien – je aktiver sie ist, desto mehr.',
+    anim: 'mito',
+    game:'clicker', clickGoal:10,
+    okMsg:'⚡ Mitochondrien aufgeladen! ATP-Produktion läuft wieder!'
+  },
+  membrane: {
+    icon:'🛡️', title:'Zellmembran', sub:'Das selektive Tor',
+    body:'Die Zellmembran ist <strong>selektiv permeabel</strong>: Sie besteht aus einer Phospholipid-Doppelschicht mit eingebetteten Proteinen. Kleine Moleküle (O₂, H₂O) können durch – große nicht.',
+    anim: 'membrane',
+    game:'sorter',
+    molecules:[{icon:'💧',label:'H₂O',correct:'in'},{icon:'🟠',label:'O₂',correct:'in'},{icon:'🔴',label:'Protein',correct:'out'}],
+    okMsg:'🛡️ Super! H₂O und O₂ können durch – große Proteine werden blockiert.'
+  },
+  ribo: {
+    icon:'🏭', title:'Ribosomen', sub:'Die Proteinfabrik',
+    body:'Ribosomen lesen <strong>mRNA</strong> (Botschaften aus dem Zellkern) und verknüpfen Aminosäuren zu <strong>Proteinen</strong>. Ohne Ribosomen keine Proteine – ohne Proteine kein Leben.',
+    anim: 'ribo',
+    game:'chain', nodes:['mRNA','Amino-\nsäure 1','Amino-\nsäure 2','Amino-\nsäure 3','Protein ✓'],
+    okMsg:'🏭 Proteinkette vollständig! Das Ribosom hat die mRNA übersetzt.'
+  },
+  golgi: {
+    icon:'📦', title:'Golgi-Apparat', sub:'Die Versandabteilung',
+    body:'Der Golgi-Apparat empfängt Proteine von Ribosomen, <strong>modifiziert</strong> und <strong>verpackt</strong> sie in Vesikel – kleine Membranbläschen – und schickt sie an ihren Zielort.',
+    anim: 'golgi',
+    game:'steps', steps:['📥 Protein\nempfangen','🏷️ Protein\nmarkieren','📦 Vesikel\nschnüren','🚀 Abschicken'],
+    okMsg:'📦 Protein versendet! Der Golgi-Apparat erledigt seine Arbeit perfekt.'
+  }
+};
+
+// PROCESS ANIMATIONS (inline HTML/CSS)
+function buildAnim(key) {
+  const templates = {
+    nucleus: `
+      <div class="process-anim">
+        <div class="anim-label">🎬 Prozess: DNA im Zellkern</div>
+        <div style="height:90px;position:relative;overflow:hidden;background:radial-gradient(ellipse,rgba(167,139,250,.1),transparent);display:flex;align-items:center;justify-content:center">
+          <svg width="320" height="80" viewBox="0 0 320 80">
+            <defs>
+              <style>
+                .h1{animation:h1anim 4s linear infinite}
+                .h2{animation:h2anim 4s linear infinite}
+                @keyframes h1anim{0%{d:path('M 10,40 Q 35,10 60,40 Q 85,70 110,40 Q 135,10 160,40 Q 185,70 210,40 Q 235,10 260,40 Q 285,70 310,40')}50%{d:path('M 10,40 Q 35,70 60,40 Q 85,10 110,40 Q 135,70 160,40 Q 185,10 210,40 Q 235,70 260,40 Q 285,10 310,40')}100%{d:path('M 10,40 Q 35,10 60,40 Q 85,70 110,40 Q 135,10 160,40 Q 185,70 210,40 Q 235,10 260,40 Q 285,70 310,40')}}
+                @keyframes h2anim{0%{d:path('M 10,40 Q 35,70 60,40 Q 85,10 110,40 Q 135,70 160,40 Q 185,10 210,40 Q 235,70 260,40 Q 285,10 310,40')}50%{d:path('M 10,40 Q 35,10 60,40 Q 85,70 110,40 Q 135,10 160,40 Q 185,70 210,40 Q 235,10 260,40 Q 285,70 310,40')}100%{d:path('M 10,40 Q 35,70 60,40 Q 85,10 110,40 Q 135,70 160,40 Q 185,10 210,40 Q 235,70 260,40 Q 285,10 310,40')}}
+              </style>
+            </defs>
+            <path class="h1" d="M 10,40 Q 35,10 60,40 Q 85,70 110,40 Q 135,10 160,40 Q 185,70 210,40 Q 235,10 260,40 Q 285,70 310,40" fill="none" stroke="#a78bfa" stroke-width="2.5"/>
+            <path class="h2" d="M 10,40 Q 35,70 60,40 Q 85,10 110,40 Q 135,70 160,40 Q 185,10 210,40 Q 235,70 260,40 Q 285,10 310,40" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+            <!-- base pairs -->
+            <line x1="60" y1="40" x2="60" y2="40" stroke="rgba(167,139,250,0.4)" stroke-width="1.5"/>
+            <line x1="110" y1="40" x2="110" y2="40" stroke="rgba(167,139,250,0.4)" stroke-width="1.5"/>
+            <!-- dots -->
+            <circle cx="35" cy="14" r="4" fill="#c4b5fd" opacity="0.8"/>
+            <circle cx="85" cy="66" r="4" fill="#8b5cf6" opacity="0.8"/>
+            <circle cx="135" cy="14" r="4" fill="#c4b5fd" opacity="0.8"/>
+            <circle cx="185" cy="66" r="4" fill="#8b5cf6" opacity="0.8"/>
+            <circle cx="235" cy="14" r="4" fill="#c4b5fd" opacity="0.8"/>
+            <circle cx="285" cy="66" r="4" fill="#8b5cf6" opacity="0.8"/>
+            <text x="160" y="76" text-anchor="middle" font-size="9" fill="rgba(167,139,250,0.7)" font-family="sans-serif">DNA-Doppelhelix</text>
+          </svg>
+        </div>
+      </div>`,
+    mito: `
+      <div class="process-anim">
+        <div class="anim-label">🎬 Prozess: ATP-Produktion (Zellatmung)</div>
+        <div style="height:90px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(251,191,36,.06),rgba(234,88,12,.04))">
+          <svg width="100%" height="90" viewBox="0 0 450 90" preserveAspectRatio="xMidYMid meet">
+            <!-- Labels -->
+            <text x="30" y="50" font-size="11" fill="rgba(251,191,36,0.8)" font-family="sans-serif" font-weight="bold">Glukose</text>
+            <text x="30" y="65" font-size="9" fill="rgba(251,191,36,0.5)" font-family="sans-serif">+ O₂</text>
+            <text x="185" y="48" font-size="22" fill="rgba(251,191,36,0.6)" font-family="sans-serif" font-weight="bold">⚡</text>
+            <text x="175" y="65" font-size="10" fill="rgba(251,191,36,0.5)" font-family="sans-serif">Mitochondrium</text>
+            <text x="345" y="45" font-size="11" fill="rgba(52,211,153,0.9)" font-family="sans-serif" font-weight="bold">⚡ ATP</text>
+            <text x="345" y="60" font-size="9" fill="rgba(52,211,153,0.5)" font-family="sans-serif">+ CO₂ + H₂O</text>
+            <!-- arrows -->
+            <line x1="100" y1="50" x2="165" y2="50" stroke="rgba(251,191,36,0.4)" stroke-width="1.5" stroke-dasharray="5,3"/>
+            <polygon points="162,46 170,50 162,54" fill="rgba(251,191,36,0.5)"/>
+            <line x1="225" y1="50" x2="335" y2="50" stroke="rgba(52,211,153,0.4)" stroke-width="1.5" stroke-dasharray="5,3"/>
+            <polygon points="332,46 340,50 332,54" fill="rgba(52,211,153,0.6)"/>
+            <!-- Moving particles -->
+            <circle r="5" fill="rgba(251,191,36,0.8)">
+              <animateMotion dur="2.5s" repeatCount="indefinite" path="M 95,50 L 165,50"/>
+              <animate attributeName="opacity" dur="2.5s" repeatCount="indefinite" values="0;1;1;0"/>
+            </circle>
+            <circle r="5" fill="rgba(251,191,36,0.6)">
+              <animateMotion dur="2.5s" begin="1.2s" repeatCount="indefinite" path="M 95,50 L 165,50"/>
+              <animate attributeName="opacity" dur="2.5s" begin="1.2s" repeatCount="indefinite" values="0;1;1;0"/>
+            </circle>
+            <circle r="5" fill="rgba(52,211,153,0.9)">
+              <animateMotion dur="2.5s" repeatCount="indefinite" path="M 225,50 L 340,50"/>
+              <animate attributeName="opacity" dur="2.5s" repeatCount="indefinite" values="0;1;1;0"/>
+            </circle>
+            <circle r="4" fill="rgba(52,211,153,0.7)">
+              <animateMotion dur="2.5s" begin="1.3s" repeatCount="indefinite" path="M 225,50 L 340,50"/>
+              <animate attributeName="opacity" dur="2.5s" begin="1.3s" repeatCount="indefinite" values="0;1;1;0"/>
+            </circle>
+          </svg>
+        </div>
+      </div>`,
+    membrane: `
+      <div class="process-anim">
+        <div class="anim-label">🎬 Prozess: Selektiver Transport</div>
+        <div style="height:90px;position:relative;overflow:hidden;background:rgba(56,189,248,0.04)">
+          <svg width="100%" height="90" viewBox="0 0 450 90" preserveAspectRatio="xMidYMid meet">
+            <!-- Lipid bilayer -->
+            <g transform="translate(0,30)">
+              ${Array.from({length:22},(_,i)=>`
+                <circle cx="${i*21+10}" cy="3" r="5" fill="rgba(56,189,248,0.5)"/>
+                <line x1="${i*21+10}" y1="8" x2="${i*21+7}" y2="20" stroke="rgba(56,189,248,0.3)" stroke-width="2" stroke-linecap="round"/>
+                <line x1="${i*21+10}" y1="8" x2="${i*21+13}" y2="20" stroke="rgba(56,189,248,0.3)" stroke-width="2" stroke-linecap="round"/>
+                <line x1="${i*21+10}" y1="36" x2="${i*21+7}" y2="24" stroke="rgba(56,189,248,0.3)" stroke-width="2" stroke-linecap="round"/>
+                <line x1="${i*21+10}" y1="36" x2="${i*21+13}" y2="24" stroke="rgba(56,189,248,0.3)" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="${i*21+10}" cy="39" r="5" fill="rgba(56,189,248,0.4)"/>
+              `).join('')}
+            </g>
+            <!-- Labels -->
+            <text x="14" y="14" font-size="9" fill="rgba(255,255,255,0.5)" font-family="sans-serif">Außen</text>
+            <text x="14" y="84" font-size="9" fill="rgba(255,255,255,0.5)" font-family="sans-serif">Innen</text>
+            <!-- Passing molecules -->
+            <text font-size="14">
+              <animateMotion dur="3s" repeatCount="indefinite" path="M 80,5 L 80,80"/>
+              <animate attributeName="opacity" dur="3s" repeatCount="indefinite" values="1;1;0.3;1"/>💧
+            </text>
+            <text font-size="14">
+              <animateMotion dur="3s" begin="1.5s" repeatCount="indefinite" path="M 200,5 L 200,80"/>
+              <animate attributeName="opacity" dur="3s" begin="1.5s" repeatCount="indefinite" values="1;1;0.3;1"/>🟠
+            </text>
+            <!-- Blocked molecule -->
+            <text font-size="16" x="320" y="20">🔴
+              <animate attributeName="y" dur="1.5s" repeatCount="indefinite" values="8;28;8"/>
+            </text>
+            <text x="310" y="82" font-size="9" fill="rgba(248,113,113,0.7)" font-family="sans-serif">blockiert!</text>
+          </svg>
+        </div>
+      </div>`,
+    ribo: `
+      <div class="process-anim">
+        <div class="anim-label">🎬 Prozess: Proteinsynthese am Ribosom</div>
+        <div style="height:90px;position:relative;overflow:hidden;background:rgba(52,211,153,0.04)">
+          <svg width="100%" height="90" viewBox="0 0 450 90" preserveAspectRatio="xMidYMid meet">
+            <!-- mRNA strand moving -->
+            <rect y="35" height="8" rx="4" fill="rgba(52,211,153,0.3)" stroke="rgba(52,211,153,0.5)" stroke-width="1">
+              <animate attributeName="x" dur="4s" repeatCount="indefinite" values="-20;430"/>
+              <animate attributeName="width" dur="4s" repeatCount="indefinite" values="200;200"/>
+            </rect>
+            <!-- Ribosome body -->
+            <ellipse cx="220" cy="42" rx="35" ry="20" fill="rgba(52,211,153,0.15)" stroke="rgba(52,211,153,0.5)" stroke-width="2"/>
+            <ellipse cx="220" cy="35" rx="22" ry="12" fill="rgba(52,211,153,0.2)" stroke="rgba(52,211,153,0.4)" stroke-width="1.5"/>
+            <text x="220" y="42" text-anchor="middle" font-size="9" fill="rgba(52,211,153,0.9)" font-family="sans-serif">Ribosom</text>
+            <!-- Growing protein chain -->
+            <g transform="translate(260,10)">
+              <circle cx="0" cy="15" r="8" fill="rgba(52,211,153,0.3)" stroke="rgba(52,211,153,0.6)" stroke-width="1.5">
+                <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="0;0;1;1"/>
+              </circle>
+              <circle cx="18" cy="8" r="8" fill="rgba(56,189,248,0.3)" stroke="rgba(56,189,248,0.6)" stroke-width="1.5">
+                <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="0;0;0;1"/>
+              </circle>
+              <circle cx="34" cy="18" r="8" fill="rgba(167,139,250,0.3)" stroke="rgba(167,139,250,0.6)" stroke-width="1.5">
+                <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="0;0;0;1" begin="0.5s"/>
+              </circle>
+              <line x1="8" y1="14" x2="10" y2="9" stroke="rgba(255,255,255,0.2)" stroke-width="1.5">
+                <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="0;0;0;1"/>
+              </line>
+              <line x1="26" y1="10" x2="28" y2="16" stroke="rgba(255,255,255,0.2)" stroke-width="1.5">
+                <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="0;0;0;1" begin="0.5s"/>
+              </line>
+            </g>
+            <text x="220" y="82" text-anchor="middle" font-size="9" fill="rgba(52,211,153,0.6)" font-family="sans-serif">mRNA → Aminosäuren → Protein</text>
+          </svg>
+        </div>
+      </div>`,
+    golgi: `
+      <div class="process-anim">
+        <div class="anim-label">🎬 Prozess: Golgi-Apparat (Verpackung)</div>
+        <div style="height:90px;position:relative;overflow:hidden;background:rgba(251,113,133,0.04)">
+          <svg width="100%" height="90" viewBox="0 0 450 90" preserveAspectRatio="xMidYMid meet">
+            <!-- Incoming vesicle from ribosome -->
+            <circle r="10" fill="rgba(52,211,153,0.3)" stroke="rgba(52,211,153,0.5)" stroke-width="1.5">
+              <animateMotion dur="4s" repeatCount="indefinite" path="M 40,45 L 140,45"/>
+              <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="1;1;0;0;0"/>
+            </circle>
+            <!-- Golgi stacks -->
+            <g transform="translate(150,25)">
+              <path d="M 0,0 Q 60,-5 120,0" fill="none" stroke="rgba(251,113,133,0.7)" stroke-width="7" stroke-linecap="round"/>
+              <path d="M 5,14 Q 60,9 115,14" fill="none" stroke="rgba(251,113,133,0.55)" stroke-width="6" stroke-linecap="round"/>
+              <path d="M 10,26 Q 60,21 110,26" fill="none" stroke="rgba(251,113,133,0.4)" stroke-width="5" stroke-linecap="round"/>
+              <path d="M 15,36 Q 60,31 105,36" fill="none" stroke="rgba(251,113,133,0.3)" stroke-width="4" stroke-linecap="round"/>
+            </g>
+            <!-- Outgoing vesicles -->
+            <circle r="8" fill="rgba(251,113,133,0.35)" stroke="rgba(251,113,133,0.6)" stroke-width="1.5">
+              <animateMotion dur="4s" repeatCount="indefinite" path="M 280,45 L 400,25"/>
+              <animate attributeName="opacity" dur="4s" repeatCount="indefinite" values="0;0;0;1;1"/>
+            </circle>
+            <circle r="6" fill="rgba(251,113,133,0.25)" stroke="rgba(251,113,133,0.5)" stroke-width="1.5">
+              <animateMotion dur="4s" begin="1.5s" repeatCount="indefinite" path="M 275,50 L 400,65"/>
+              <animate attributeName="opacity" dur="4s" begin="1.5s" repeatCount="indefinite" values="0;0;0;1;1"/>
+            </circle>
+            <!-- Labels -->
+            <text x="40" y="78" text-anchor="middle" font-size="9" fill="rgba(52,211,153,0.7)" font-family="sans-serif">von Ribosom</text>
+            <text x="215" y="78" text-anchor="middle" font-size="9" fill="rgba(251,113,133,0.7)" font-family="sans-serif">Golgi-Apparat</text>
+            <text x="390" y="18" text-anchor="middle" font-size="9" fill="rgba(251,113,133,0.7)" font-family="sans-serif">Zellmembran</text>
+            <text x="400" y="70" text-anchor="middle" font-size="9" fill="rgba(251,113,133,0.6)" font-family="sans-serif">Lysosom</text>
+          </svg>
+        </div>
+      </div>`
+  };
+  return templates[key] || '';
+}
+
+// ================================================
+// STATE
+// ================================================
+let G = {
+  xp:0, startTime:null, discovered:{},
+  practiceIdx:0, practiceCorrect:0, lives:3,
+  testIdx:0, testCorrect:0,
+  answered:false, selOpt:null,
+  matchLeft:null, matchedPairs:[], shuffledRights:[],
+  gapAnswers:[], activeGap:0, gapQ:null,
+  atpClicks:0, sorterAnswers:{}, sorterDone:false,
+  chainStep:0, chainDone:false,
+  golgiStep:0, golgiDone:false
+};
+
+function SS(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function addXP(n,id){ G.xp+=n; const el=document.getElementById(id); if(el)el.textContent=G.xp; }
+
+// ================================================
+// LEARN
+// ================================================
+function startLearn(){ G.startTime=G.startTime||Date.now(); SS('s-learn'); }
+
+function selectOrg(key){
+  if(G.discovered[key]) return;
+  const d=ORGS[key];
+  const panel=document.getElementById('info-panel');
+  G.atpClicks=0; G.sorterAnswers={}; G.sorterDone=false;
+  G.chainStep=0; G.chainDone=false; G.golgiStep=0; G.golgiDone=false;
+  G._curKey=key;
+
+  let html=`<div class="ip-head"><div class="ip-icon">${d.icon}</div><div><div class="ip-title">${d.title}</div><div class="ip-sub">${d.sub}</div></div></div>`;
+  html+=`<div class="ip-body">${d.body}</div>`;
+  html+=buildAnim(key);
+  html+=`<div style="margin-top:10px"><div class="mg-label">🎮 Mini-Challenge:</div>`;
+
+  if(d.game==='mc2') html+=buildMC2(d,key);
+  else if(d.game==='clicker') html+=buildClicker(d,key);
+  else if(d.game==='sorter') html+=buildSorter(d,key);
+  else if(d.game==='chain') html+=buildChain(d,key);
+  else if(d.game==='steps') html+=buildSteps(d,key);
+
+  html+=`</div><div class="fb" id="ip-fb"></div>`;
+  panel.innerHTML=html;
+  panel.style.borderColor='rgba(56,189,248,.4)';
+  if(d.game==='chain') setTimeout(()=>activateChainNode(),50);
+  if(d.game==='steps') setTimeout(()=>highlightGolgiStep(),50);
+}
+
+// MC2
+function buildMC2(d,key){
+  return `<div style="font-size:12px;margin-bottom:8px">${d.q}</div>
+  <div class="mc2">${d.opts.map((o,i)=>`<button class="mc2-btn" onclick="checkMC2('${key}',${i})">${o}</button>`).join('')}</div>`;
+}
+function checkMC2(key,i){
+  const d=ORGS[key]; const btns=document.querySelectorAll('.mc2-btn');
+  btns.forEach(b=>{b.style.pointerEvents='none'});
+  const fb=document.getElementById('ip-fb');
+  if(i===d.correct){ btns[i].classList.add('correct'); fb.className='fb fb-ok show'; fb.innerHTML=d.okMsg; discoverOrg(key); }
+  else{ btns[i].classList.add('wrong'); btns[d.correct].classList.add('correct'); fb.className='fb fb-err show'; fb.innerHTML=d.errMsg; }
+}
+
+// CLICKER
+function buildClicker(d,key){
+  return `<div class="atp-bar-wrap"><div class="atp-fill" id="atp-fill" style="width:0%">0%</div></div>
+  <button class="atp-btn" id="atp-btn" onclick="clickATP('${key}')">⚡ Mitochondrium aufladen – klick! ⚡</button>`;
+}
+function clickATP(key){
+  G.atpClicks++; const pct=Math.round(G.atpClicks/ORGS[key].clickGoal*100);
+  const fill=document.getElementById('atp-fill');
+  fill.style.width=Math.min(100,pct)+'%'; fill.textContent=Math.min(100,pct)+'%';
+  if(G.atpClicks>=ORGS[key].clickGoal){
+    document.getElementById('atp-btn').disabled=true;
+    const fb=document.getElementById('ip-fb'); fb.className='fb fb-ok show'; fb.innerHTML=ORGS[key].okMsg;
+    discoverOrg(key);
+  }
+}
+
+// SORTER
+function buildSorter(d,key){
+  let html='<div style="font-size:12px;margin-bottom:9px">Klicke ✓ Rein oder ✗ Raus für jedes Molekül:</div>';
+  html+='<div class="mol-row">'+d.molecules.map((m,i)=>`
+    <div class="molecule">
+      <div class="mol-icon-box" id="mib-${i}">${m.icon}</div>
+      <div class="mol-lbl">${m.label}</div>
+      <div class="mol-btns">
+        <button class="mol-btn mol-in" onclick="sortMol(${i},'in','${key}')">✓ Rein</button>
+        <button class="mol-btn mol-out" onclick="sortMol(${i},'out','${key}')">✗ Raus</button>
+      </div>
+    </div>`).join('')+'</div>';
+  return html;
+}
+function sortMol(idx,choice,key){
+  if(G.sorterDone) return;
+  const d=ORGS[key]; const m=d.molecules[idx]; const ok=choice===m.correct;
+  const box=document.getElementById(`mib-${idx}`); box.classList.add(ok?'mol-correct':'mol-wrong-box');
+  document.querySelectorAll(`#mib-${idx}`).forEach(()=>{});
+  const btns=[...document.querySelectorAll('.molecule')][idx]?.querySelectorAll('.mol-btn');
+  if(btns){btns.forEach(b=>b.style.pointerEvents='none');}
+  G.sorterAnswers[idx]=choice;
+  if(Object.keys(G.sorterAnswers).length===d.molecules.length){
+    G.sorterDone=true;
+    const allOk=d.molecules.every((m,i)=>G.sorterAnswers[i]===m.correct);
+    const fb=document.getElementById('ip-fb');
+    if(allOk){fb.className='fb fb-ok show';fb.innerHTML=d.okMsg;discoverOrg(key);}
+    else{fb.className='fb fb-err show';fb.innerHTML='❌ Fast! H₂O und O₂ kommen rein – große Proteine werden blockiert.';}
+  }
+}
+
+// CHAIN
+function buildChain(d,key){
+  let html='<div style="font-size:12px;margin-bottom:9px">Klicke die Schritte in der richtigen Reihenfolge:</div>';
+  html+='<div class="chain-row">'+d.nodes.map((n,i)=>{
+    const cc=i>0?`<div class="cc" id="cc-${i}">→</div>`:'';
+    return `${cc}<div class="dn" id="dn-${i}" onclick="clickChain(${i},'${key}')">${n}</div>`;
+  }).join('')+'</div>';
+  return html;
+}
+function activateChainNode(){
+  document.querySelectorAll('.dn').forEach((n,i)=>n.classList.toggle('active-node',i===G.chainStep));
+}
+function clickChain(i,key){
+  if(G.chainDone) return;
+  if(i===G.chainStep){
+    document.getElementById(`dn-${i}`).classList.remove('active-node');
+    document.getElementById(`dn-${i}`).classList.add('linked');
+    if(i>0){const cc=document.getElementById(`cc-${i}`);if(cc)cc.classList.add('linked');}
+    G.chainStep++;
+    if(G.chainStep===ORGS[key].nodes.length){
+      G.chainDone=true;
+      const fb=document.getElementById('ip-fb');fb.className='fb fb-ok show';fb.innerHTML=ORGS[key].okMsg;discoverOrg(key);
+    } else activateChainNode();
+  } else {
+    const el=document.getElementById(`dn-${i}`); el.classList.add('bad-node');
+    setTimeout(()=>el.classList.remove('bad-node'),400);
+  }
+}
+
+// GOLGI STEPS
+function buildSteps(d,key){
+  let html='<div style="font-size:12px;margin-bottom:9px">Klicke dich Schritt für Schritt durch:</div>';
+  html+='<div class="g-steps">'+d.steps.map((s,i)=>{
+    const arr=i>0?`<div class="g-arr">→</div>`:'';
+    return `${arr}<div class="g-step" id="gs-${i}">${s}</div>`;
+  }).join('')+'</div>';
+  html+=`<button class="btn btn-ghost btn-block" id="golgi-btn" onclick="advanceGolgi('${key}')" style="font-size:13px;padding:10px">▶ Nächster Schritt</button>`;
+  return html;
+}
+function highlightGolgiStep(){
+  const d=ORGS.golgi; d.steps.forEach((_,i)=>{
+    const el=document.getElementById(`gs-${i}`); if(!el) return;
+    el.className='g-step'+(i<G.golgiStep?' done':i===G.golgiStep?' active':'');
+  });
+}
+function advanceGolgi(key){
+  if(G.golgiDone) return;
+  G.golgiStep++; highlightGolgiStep();
+  if(G.golgiStep>=ORGS[key].steps.length){
+    G.golgiDone=true;
+    document.getElementById('golgi-btn').style.display='none';
+    const fb=document.getElementById('ip-fb');fb.className='fb fb-ok show';fb.innerHTML=ORGS[key].okMsg;discoverOrg(key);
+  }
+}
+
+// DISCOVER
+function discoverOrg(key){
+  if(G.discovered[key]) return;
+  G.discovered[key]=true; addXP(50,'l-xp');
+  // Hotspot
+  const hs=document.getElementById('hs-'+key);
+  if(hs){hs.classList.remove('pulsing');hs.classList.add('done');hs.textContent='✓';}
+  // SVG highlights
+  const svgEl=document.getElementById('disc-'+key);
+  if(svgEl){svgEl.style.stroke='rgba(52,211,153,0.6)';}
+  if(key==='mito'){
+    ['disc-mito1','disc-mito2'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.stroke='rgba(52,211,153,0.5)';});
+  }
+  // SVG organelle glow
+  ['svg-nucleus','svg-mito1','svg-mito2','svg-ribo','svg-golgi','svg-membrane'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&id.includes(key.replace('membrane','membrane').replace('ribo','ribo'))){}
+  });
+  // Update count
+  const n=Object.keys(G.discovered).length;
+  document.getElementById('disc-n').textContent=n;
+  document.getElementById('l-prog').style.width=(n/5*100)+'%';
+  document.getElementById('l-xp').textContent=G.xp;
+  if(n===5) setTimeout(()=>showTrans({icon:'🔍',title:'Zelle vollständig erkundet!',sub:'Alle 5 Organellen entdeckt und verstanden. Jetzt üben!',xp:'+250 XP ⭐',next:startPractice,btn:'✏️ Übungsphase starten'}),600);
+}
+
+// ================================================
+// TRANSITION
+// ================================================
+function showTrans({icon,title,sub,xp,next,btn}){
+  document.getElementById('t-icon').textContent=icon;
+  document.getElementById('t-title').textContent=title;
+  document.getElementById('t-sub').textContent=sub;
+  document.getElementById('t-xp').textContent=xp;
+  const b=document.getElementById('t-btn');b.textContent=btn;b.onclick=next;
+  SS('s-trans');
+}
+
+// ================================================
+// PRACTICE
+// ================================================
+const PQS=[
+  {type:'mc',text:'Maya fragt: Wo befindet sich die DNA der Zelle?',hint:'Erinnerst du dich an die glühende Kugel im Zentrum?',opts:['In der Zellmembran','Im Zellkern','In den Ribosomen','Im Golgi-Apparat'],correct:1,explain:'✅ Der Zellkern enthält die DNA – er ist die Kommandozentrale.'},
+  {type:'gap',text:'Logbuch-Eintrag – vervollständige:',hint:'Schau in deine Entdeckungsnotizen!',sentence:'Die {Mitochondrien} erzeugen Energie als {ATP}. Die {Zellmembran} kontrolliert den Stofftransport.',blanks:['Mitochondrien','ATP','Zellmembran'],wordBank:['Ribosomen','Mitochondrien','DNA','ATP','Zellmembran','Vakuole'],explain:'✅ Mitochondrien → ATP-Produktion, Zellmembran → Grenzposten.'},
+  {type:'mc',text:'Welches Organell muss repariert werden, wenn der Zelle die Energie ausgeht?',hint:'ATP = Energie = welches Organell?',opts:['Zellkern','Ribosom','Mitochondrium','Golgi-Apparat'],correct:2,explain:'✅ Mitochondrien = Kraftwerk. ATP-Mangel → dort liegt das Problem.'},
+  {type:'match',text:'Ordne Organell und Funktion zu:',hint:'Denke an die Animationen und Mini-Spiele von vorhin!',lefts:['Zellkern','Mitochondrium','Ribosom','Zellmembran'],rights:['Enthält die DNA','Produziert ATP','Baut Proteine','Kontrolliert Eingang'],pairs:[0,1,2,3],explain:'✅ Alle richtig! Das sind die vier Kernfunktionen.'}
+];
+const TQS=[
+  {type:'mc',text:'Was ist das Kraftwerk der Zelle?',opts:['Zellkern','Ribosom','Mitochondrium','Golgi-Apparat'],correct:2,explain:'✅ Mitochondrien erzeugen ATP durch Zellatmung.'},
+  {type:'mc',text:'Was enthält der Zellkern?',opts:['ATP und Glukose','Die DNA der Zelle','Verdauungsenzyme','Wasser und Salze'],correct:1,explain:'✅ DNA = Bauplan aller Proteine = Zellkern.'},
+  {type:'mc',text:'Was ist eine Besonderheit der Pflanzenzelle?',opts:['Keine Mitochondrien','Chloroplasten und Zellwand','Keinen Zellkern','Keine Ribosomen'],correct:1,explain:'✅ Chloroplasten (Fotosynthese) + starre Zellwand aus Zellulose.'},
+  {type:'mc',text:'Was passiert bei der Zellatmung in den Mitochondrien?',opts:['Licht → Zucker','Protein → Aminosäuren','Glukose + O₂ → ATP + CO₂ + H₂O','DNA wird kopiert'],correct:2,explain:'✅ C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ATP. Das Gegenteil der Fotosynthese!'},
+  {type:'mc',text:'Warum kann eine Zelle ohne Zellkern nicht dauerhaft überleben?',opts:['Keine Energieproduktion','Ohne DNA keine Proteinsynthese','Zellmembran kollabiert','Ribosomen brauchen den Kern'],correct:1,explain:'✅ Kein Kern → keine DNA → keine mRNA → keine Proteine → kein Zellbetrieb.'}
+];
+
+function startPractice(){ G.practiceIdx=0;G.practiceCorrect=0;G.lives=3;SS('s-practice');renderPQ(); }
+function renderPQ(){
+  const q=PQS[G.practiceIdx];
+  document.getElementById('p-prog').style.width=(G.practiceIdx/PQS.length*100)+'%';
+  document.getElementById('p-xp').textContent=G.xp;
+  document.getElementById('p-lives').textContent='❤️'.repeat(G.lives)+'🖤'.repeat(3-G.lives);
+  G.answered=false;G.selOpt=null;
+  let html=`<div class="q-badge qb-p">✏️ Üben · ${G.practiceIdx+1}/${PQS.length}</div>
+    <div class="q-text">${q.text}</div>
+    <button class="hint-tog" onclick="toggleHint()">💡 Hinweis</button>
+    <div class="hint-box" id="hint-box">${q.hint}</div>`;
+  if(q.type==='mc') html+=renderMCOpts(q);
+  else if(q.type==='gap') html+=`<div id="gap-wrap"></div><div class="wb" id="wb"></div>`;
+  else if(q.type==='match') html+=renderMatchHTML(q);
+  html+=`<div class="fb" id="fb"></div>
+    <div class="btn-row">
+      <button class="btn btn-yellow" id="btn-check" onclick="checkP()" style="display:none">Prüfen</button>
+      <button class="btn btn-green" id="btn-next" onclick="nextP()" style="display:none">Weiter →</button>
+    </div>`;
+  document.getElementById('p-card').innerHTML=html;
+  if(q.type==='gap') initGap(q);
+  if(q.type==='match') initMatch(q);
+}
+function toggleHint(){document.getElementById('hint-box')?.classList.toggle('show')}
+function nextP(){ G.practiceIdx++; if(G.practiceIdx<PQS.length) renderPQ(); else showTrans({icon:'✏️',title:'Übungsphase bestanden!',sub:`${G.practiceCorrect}/${PQS.length} richtig. Jetzt der echte Test!`,xp:`+${G.practiceCorrect*40} XP ⭐`,next:startTest,btn:'🏆 Quiz starten'}); }
+
+function startTest(){ G.testIdx=0;G.testCorrect=0;SS('s-test');renderTQ(); }
+function renderTQ(){
+  const q=TQS[G.testIdx];
+  document.getElementById('t-prog').style.width=(G.testIdx/TQS.length*100)+'%';
+  document.getElementById('t2-xp').textContent=G.xp;
+  G.answered=false;G.selOpt=null;
+  let html=`<div class="q-badge qb-t">🏆 Quiz · ${G.testIdx+1}/${TQS.length}</div>
+    <div class="q-text">${q.text}</div>`;
+  html+=renderMCOpts(q);
+  html+=`<div class="fb" id="fb"></div>
+    <div class="btn-row">
+      <button class="btn btn-blue" id="btn-check" onclick="checkT()" style="display:none">Antwort prüfen</button>
+      <button class="btn btn-blue" id="btn-next" onclick="nextT()" style="display:none">Weiter →</button>
+    </div>`;
+  document.getElementById('t-card').innerHTML=html;
+}
+function nextT(){ G.testIdx++; if(G.testIdx<TQS.length) renderTQ(); else showResults(); }
+
+// MC
+function renderMCOpts(q){
+  const L=['A','B','C','D'];
+  return '<div class="opts">'+q.opts.map((o,i)=>`<div class="opt" id="opt-${i}" onclick="pickOpt(${i})"><div class="opt-l">${L[i]}</div><div>${o}</div></div>`).join('')+'</div>';
+}
+function pickOpt(i){ if(G.answered) return; G.selOpt=i; document.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel')); document.getElementById(`opt-${i}`).classList.add('sel'); document.getElementById('btn-check').style.display='flex'; }
+function checkMCQ(q,isPractice){
+  if(G.answered||G.selOpt===null) return; G.answered=true;
+  const ok=G.selOpt===q.correct;
+  document.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+  document.getElementById(`opt-${G.selOpt}`).classList.add(ok?'correct':'wrong');
+  if(!ok) document.getElementById(`opt-${q.correct}`).classList.add('correct');
+  const fb=document.getElementById('fb');
+  if(ok){ addXP(isPractice?40:60,isPractice?'p-xp':'t2-xp'); if(isPractice)G.practiceCorrect++;else G.testCorrect++; fb.className='fb fb-ok show'; fb.innerHTML=q.explain; }
+  else{ if(isPractice){G.lives=Math.max(0,G.lives-1);document.getElementById('p-lives').textContent='❤️'.repeat(G.lives)+'🖤'.repeat(3-G.lives); fb.className='fb fb-hint show';} else fb.className='fb fb-err show'; fb.innerHTML=(isPractice?'💡 Nicht ganz. ':' ❌ ')+q.explain; }
+  document.getElementById('btn-check').style.display='none';
+  document.getElementById('btn-next').style.display='flex';
+}
+function checkP(){ const q=PQS[G.practiceIdx]; if(q.type==='mc') checkMCQ(q,true); else if(q.type==='gap') checkGapNow(true); }
+function checkT(){ checkMCQ(TQS[G.testIdx],false); }
+
+// GAP
+function initGap(q){
+  G.gapQ=q;G.gapAnswers=new Array(q.blanks.length).fill('');G.activeGap=0;
+  let s=q.sentence;
+  q.blanks.forEach((b,i)=>{s=s.replace(`{${b}}`,`<span class="gap-slot" id="gs-${i}" onclick="focusGap(${i})">_____</span>`);});
+  document.getElementById('gap-wrap').innerHTML=`<div class="gap-text">${s}</div>`;
+  document.getElementById('wb').innerHTML=q.wordBank.map((w,i)=>`<div class="chip" id="wc-${i}" onclick="pickWord('${w}',${i})">${w}</div>`).join('');
+  document.getElementById('btn-check').style.display='flex';
+  document.getElementById('btn-check').onclick=()=>checkGapNow(true);
+  highlightGap();
+}
+function focusGap(i){G.activeGap=i;highlightGap();}
+function highlightGap(){G.gapQ?.blanks.forEach((_,i)=>{const el=document.getElementById(`gs-${i}`);if(el)el.classList.toggle('active-slot',i===G.activeGap);});}
+function pickWord(w,ci){
+  const q=G.gapQ;if(!q)return;
+  const slot=document.getElementById(`gs-${G.activeGap}`);if(!slot)return;
+  const old=G.gapAnswers[G.activeGap];
+  if(old){const oi=q.wordBank.indexOf(old);if(oi>=0)document.getElementById(`wc-${oi}`)?.classList.remove('used');}
+  G.gapAnswers[G.activeGap]=w;slot.textContent=w;slot.classList.add('filled');
+  document.getElementById(`wc-${ci}`).classList.add('used');
+  for(let i=0;i<q.blanks.length;i++){if(!G.gapAnswers[i]){G.activeGap=i;highlightGap();return;}}
+  highlightGap();
+}
+function checkGapNow(isPractice){
+  if(G.answered)return;G.answered=true;const q=G.gapQ;let ok=true;
+  q.blanks.forEach((b,i)=>{const slot=document.getElementById(`gs-${i}`);const c=G.gapAnswers[i]===b;if(slot)slot.style.color=c?'var(--green)':'var(--red)';if(!c)ok=false;});
+  const fb=document.getElementById('fb');
+  if(ok){addXP(60,isPractice?'p-xp':'t2-xp');if(isPractice)G.practiceCorrect++;fb.className='fb fb-ok show';fb.innerHTML=q.explain;}
+  else{if(isPractice){G.lives=Math.max(0,G.lives-1);document.getElementById('p-lives').textContent='❤️'.repeat(G.lives)+'🖤'.repeat(3-G.lives);fb.className='fb fb-hint show';}else fb.className='fb fb-err show';fb.innerHTML=(isPractice?'💡 Fast! ':' ❌ ')+q.explain;}
+  document.getElementById('btn-check').style.display='none';
+  document.getElementById('btn-next').style.display='flex';
+}
+
+// MATCH
+function renderMatchHTML(q){
+  const sh=[...q.rights].sort(()=>Math.random()-.5);G.shuffledRights=sh;G.matchLeft=null;G.matchedPairs=[];
+  return `<div class="match-grid"><div><div class="mg-hdr">Organell</div>${q.lefts.map((l,i)=>`<div class="mi" id="ml-${i}" onclick="pickML(${i})">${l}</div>`).join('')}</div><div><div class="mg-hdr">Funktion</div>${sh.map((r,i)=>`<div class="mi" id="mr-${i}" onclick="pickMR(${i})">${r}</div>`).join('')}</div></div>`;
+}
+function initMatch(q){G._mq=q;}
+function pickML(i){if(G.matchedPairs.some(p=>p.l===i))return;G.matchLeft=i;document.querySelectorAll('[id^=ml-]').forEach(el=>el.classList.remove('active'));document.getElementById(`ml-${i}`).classList.add('active');}
+function pickMR(j){
+  if(G.matchLeft===null)return;if(G.matchedPairs.some(p=>p.r===j))return;
+  const q=G._mq;const ok=G.shuffledRights[j]===q.rights[G.matchLeft];
+  const lEl=document.getElementById(`ml-${G.matchLeft}`);const rEl=document.getElementById(`mr-${j}`);
+  if(ok){lEl.classList.remove('active');lEl.classList.add('matched');rEl.classList.add('matched');G.matchedPairs.push({l:G.matchLeft,r:j});G.matchLeft=null;
+    if(G.matchedPairs.length===q.lefts.length){G.answered=true;addXP(80,'p-xp');G.practiceCorrect++;const fb=document.getElementById('fb');fb.className='fb fb-ok show';fb.innerHTML=q.explain;document.getElementById('btn-next').style.display='flex';}}
+  else{lEl.classList.remove('active');rEl.classList.add('bad');setTimeout(()=>rEl.classList.remove('bad'),400);G.matchLeft=null;G.lives=Math.max(0,G.lives-1);document.getElementById('p-lives').textContent='❤️'.repeat(G.lives)+'🖤'.repeat(3-G.lives);}
+}
+
+// RESULTS
+function showResults(){
+  const lP=100,pP=Math.round(G.practiceCorrect/PQS.length*100),tP=Math.round(G.testCorrect/TQS.length*100);
+  const overall=Math.round((lP+pP+tP)/3);
+  const mins=Math.max(1,Math.round((Date.now()-G.startTime)/60000));
+  document.getElementById('r-trophy').textContent=overall>=80?'🏆':overall>=60?'🥈':'🎓';
+  document.getElementById('r-pct').textContent=overall+'%';
+  document.getElementById('r-correct').textContent=G.testCorrect+'/'+TQS.length;
+  document.getElementById('r-xp').textContent=G.xp;
+  document.getElementById('r-time').textContent=mins;
+  setTimeout(()=>{
+    [['l',lP,'var(--green)'],['p',pP,'var(--yellow)'],['t',tP,'var(--red)']].forEach(([k,v,c])=>{
+      document.getElementById('rf-'+k).style.width=v+'%';
+      document.getElementById('rp-'+k).textContent=v+'%';
+    });
+  },300);
+  SS('s-result');
+}
+function restartGame(){
+  G={xp:0,startTime:null,discovered:{},practiceIdx:0,practiceCorrect:0,lives:3,testIdx:0,testCorrect:0,answered:false,selOpt:null,matchLeft:null,matchedPairs:[],shuffledRights:[],gapAnswers:[],activeGap:0,gapQ:null,atpClicks:0,sorterAnswers:{},sorterDone:false,chainStep:0,chainDone:false,golgiStep:0,golgiDone:false};
+  SS('s-start');
+}
+
+// STARS
+(function(){
+  const c=document.getElementById('stars'),ctx=c.getContext('2d');let s=[];
+  function r(){c.width=innerWidth;c.height=innerHeight}
+  function i(){s=Array.from({length:100},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.3,a:Math.random()*.5+.1,sp:Math.random()*.3+.05}))}
+  function d(){ctx.clearRect(0,0,c.width,c.height);s.forEach(st=>{st.a+=Math.sin(Date.now()*st.sp*.001)*.004;st.a=Math.max(.05,Math.min(.65,st.a));ctx.beginPath();ctx.arc(st.x,st.y,st.r,0,Math.PI*2);ctx.fillStyle=`rgba(180,210,255,${st.a})`;ctx.fill()});requestAnimationFrame(d)}
+  r();i();d();addEventListener('resize',()=>{r();i()});
+})();
+</script>
+</body>
+</html>
