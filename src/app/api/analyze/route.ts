@@ -40,15 +40,15 @@ export async function POST(request: NextRequest) {
     // Ergebnisse in DB speichern
     const { data: analyse } = await supabase
       .from('analyses')
-      .insert({ material_id: materialId, ...result.analyse })
+      .insert({ material_id: materialId, raw_output: result.analyse as Record<string, unknown> })
       .select().single()
 
     const { data: spiel } = await supabase
       .from('games')
-      .insert({ analyse_id: analyse?.id, lehrer_id: user.id, ...result.spiel, status: 'entwurf' })
+      .insert({ analyse_id: analyse?.id, lehrer_id: user.id, raw_output: result.spiel as Record<string, unknown>, status: 'entwurf' })
       .select().single()
 
-    await supabase.from('lehrkraft_checks').insert({ spiel_id: spiel?.id, ...result.check })
+    await supabase.from('lehrkraft_checks').insert({ spiel_id: spiel?.id, raw_output: result.check as Record<string, unknown> })
 
     return NextResponse.json({ analyse, spiel, check: result.check })
   } catch (err) {

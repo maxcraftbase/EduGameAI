@@ -5,8 +5,9 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<{
   fullText: string
   abschnitte: MaterialAbschnitt[]
 }> {
-  const pdfParse = (await import('pdf-parse')).default
-  const data = await pdfParse(buffer)
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require('pdf-parse')
+  const data = await pdfParse(buffer as unknown) as { text: string }
 
   const fullText = data.text
 
