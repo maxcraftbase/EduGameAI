@@ -15,9 +15,9 @@ import {
   type DiagnoseOutput,
 } from '../schemas/pipeline'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+function getClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+}
 
 // Fehlertypen für die Pipeline
 export class PipelineValidationError extends Error {
@@ -72,7 +72,7 @@ async function callClaude<T>(
 ): Promise<T> {
   let response
   try {
-    response = await client.messages.create({
+    response = await getClient().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       system: systemPrompt,
