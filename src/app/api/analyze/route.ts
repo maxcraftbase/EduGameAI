@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { AnalyseOutput, LernzielOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
 
 export async function POST(request: NextRequest) {
+  console.log('[DEBUG] ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY, '| length:', process.env.ANTHROPIC_API_KEY?.length)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

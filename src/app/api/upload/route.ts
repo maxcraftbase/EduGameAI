@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ material })
   } catch (err) {
-    console.error(err)
-    return NextResponse.json({ error: 'Upload fehlgeschlagen' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[upload error]', msg)
+    return NextResponse.json({ error: `Upload fehlgeschlagen: ${msg}` }, { status: 500 })
   }
 }
