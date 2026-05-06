@@ -104,7 +104,10 @@ export default function PlaygroundPage() {
         formData.append('bundesland', bundesland)
 
         const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
-        if (!uploadRes.ok) throw new Error('Upload fehlgeschlagen')
+        if (!uploadRes.ok) {
+          const body = await uploadRes.json().catch(() => ({}))
+          throw new Error(body.error ?? 'Upload fehlgeschlagen')
+        }
         const { material } = await uploadRes.json()
 
         // 2. Analyse
