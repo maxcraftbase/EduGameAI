@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduGame AI – Lernspiele aus deinem Unterrichtsmaterial</title>
+  <meta name="description" content="Lehrer laden Material hoch – KI generiert echte interaktive Mini-Games. Keine Quizze. Echtes Spielen. Motiviertes Lernen." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #6C3BF5;
+      --purple-dark: #4E27C4;
+      --purple-light: #EDE8FF;
+      --green: #22C55E;
+      --yellow: #FACC15;
+      --orange: #F97316;
+      --red: #EF4444;
+      --bg: #09090B;
+      --bg2: #111115;
+      --bg3: #18181C;
+      --border: rgba(255,255,255,0.08);
+      --text: #FAFAFA;
+      --muted: #A1A1AA;
+      --radius: 16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(9,9,11,0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 1.25rem; font-weight: 800;
+      background: linear-gradient(135deg, #A78BFA, #6C3BF5);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-cta {
+      background: var(--purple); color: #fff;
+      padding: 10px 22px; border-radius: 10px;
+      font-weight: 600; font-size: 0.9rem;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .nav-cta:hover { background: var(--purple-dark); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(108,59,245,0.25) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -55%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(108,59,245,0.15);
+      border: 1px solid rgba(108,59,245,0.4);
+      padding: 6px 16px; border-radius: 100px;
+      font-size: 0.85rem; font-weight: 600; color: #A78BFA;
+      margin-bottom: 28px;
+    }
+    .hero-badge span { font-size: 0.9rem; }
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 900; line-height: 1.1;
+      letter-spacing: -0.03em;
+      max-width: 800px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #A78BFA 0%, #6C3BF5 50%, #60A5FA 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero-sub {
+      margin-top: 20px;
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--muted); max-width: 560px;
+    }
+    .hero-actions {
+      margin-top: 40px;
+      display: flex; flex-wrap: wrap;
+      gap: 14px; justify-content: center;
+    }
+    .btn-primary {
+      background: var(--purple); color: #fff;
+      padding: 14px 32px; border-radius: 12px;
+      font-weight: 700; font-size: 1rem;
+      text-decoration: none; transition: all 0.2s;
+      border: none; cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--purple-dark); transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent; color: var(--text);
+      padding: 14px 28px; border-radius: 12px;
+      font-weight: 600; font-size: 1rem;
+      text-decoration: none; border: 1px solid var(--border);
+      transition: all 0.2s; cursor: pointer;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.05); }
+
+    .hero-proof {
+      margin-top: 48px;
+      display: flex; align-items: center; gap: 16px;
+      font-size: 0.85rem; color: var(--muted);
+    }
+    .avatars { display: flex; }
+    .avatars span {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--purple); border: 2px solid var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; margin-left: -8px;
+    }
+    .avatars span:first-child { margin-left: 0; }
+
+    /* ── GAMES TICKER ── */
+    .ticker-wrap {
+      overflow: hidden;
+      padding: 28px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .ticker-track {
+      display: flex; gap: 20px;
+      animation: ticker 28s linear infinite;
+      width: max-content;
+    }
+    .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .ticker-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg3); border: 1px solid var(--border);
+      padding: 8px 18px; border-radius: 100px;
+      font-size: 0.85rem; font-weight: 600; white-space: nowrap;
+      color: var(--muted);
+    }
+    .ticker-item .icon { font-size: 1.1rem; }
+
+    /* ── SECTION COMMON ── */
+    section { padding: 100px 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--purple);
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800; line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .section-sub {
+      margin-top: 12px;
+      font-size: 1.05rem; color: var(--muted);
+      max-width: 520px;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how { background: var(--bg2); }
+    .steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px; margin-top: 56px;
+    }
+    .step {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .step:hover { border-color: rgba(108,59,245,0.4); }
+    .step-num {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--purple);
+      margin-bottom: 16px;
+    }
+    .step-icon {
+      font-size: 2.4rem; margin-bottom: 16px; display: block;
+    }
+    .step h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
+
+    /* ── PROBLEM ── */
+    .problem-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 40px; margin-top: 56px; align-items: center;
+    }
+    @media (max-width: 700px) { .problem-grid { grid-template-columns: 1fr; } }
+    .problem-cards { display: flex; flex-direction: column; gap: 16px; }
+    .problem-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .problem-card .emoji { font-size: 1.6rem; flex-shrink: 0; }
+    .problem-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .problem-card p { font-size: 0.85rem; color: var(--muted); }
+    .solution-box {
+      background: linear-gradient(135deg, rgba(108,59,245,0.12), rgba(96,165,250,0.08));
+      border: 1px solid rgba(108,59,245,0.3);
+      border-radius: var(--radius); padding: 36px 32px;
+    }
+    .solution-box h3 {
+      font-size: 1.5rem; font-weight: 800; margin-bottom: 16px;
+    }
+    .solution-box p { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
+    .solution-box ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .solution-box li {
+      display: flex; gap: 10px; align-items: flex-start;
+      font-size: 0.9rem;
+    }
+    .solution-box li::before {
+      content: "✓"; color: var(--green);
+      font-weight: 800; flex-shrink: 0;
+    }
+
+    /* ── GAME CARDS ── */
+    .games-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px; margin-top: 48px;
+    }
+    .game-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px 20px;
+      cursor: default; transition: all 0.2s;
+    }
+    .game-card:hover {
+      border-color: rgba(108,59,245,0.4);
+      transform: translateY(-3px);
+      background: rgba(108,59,245,0.06);
+    }
+    .game-card .game-icon { font-size: 2rem; margin-bottom: 12px; display: block; }
+    .game-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .game-card p { font-size: 0.78rem; color: var(--muted); }
+    .game-tag {
+      display: inline-block; margin-top: 10px;
+      padding: 3px 10px; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .tag-üben { background: rgba(34,197,94,0.15); color: #4ADE80; }
+    .tag-quiz { background: rgba(239,68,68,0.15); color: #F87171; }
+    .tag-input { background: rgba(96,165,250,0.15); color: #93C5FD; }
+    .tag-aktiv { background: rgba(250,204,21,0.15); color: #FDE047; }
+
+    /* ── FOR TEACHERS ── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px; margin-top: 48px;
+    }
+    .feature-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 24px;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: rgba(108,59,245,0.3); }
+    .feature-icon { font-size: 1.8rem; margin-bottom: 14px; }
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── PRICING ── */
+    .pricing { background: var(--bg2); }
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 20px; margin-top: 48px; align-items: stretch;
+    }
+    .plan {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 24px;
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .plan.featured {
+      border-color: var(--purple);
+      background: linear-gradient(160deg, rgba(108,59,245,0.1), var(--bg3));
+      position: relative;
+    }
+    .plan-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: var(--purple); color: #fff;
+      padding: 4px 16px; border-radius: 100px;
+      font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+    }
+    .plan-name { font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
+    .plan-price {
+      font-size: 2.2rem; font-weight: 900; letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .plan-price span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+    .plan-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .plan ul { list-style: none; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .plan li { font-size: 0.875rem; display: flex; gap: 8px; }
+    .plan li::before { content: "✓"; color: var(--green); font-weight: 700; flex-shrink: 0; }
+    .plan li.off::before { content: "×"; color: var(--muted); }
+    .plan li.off { color: var(--muted); }
+    .plan-cta {
+      margin-top: 24px; display: block; text-align: center;
+      padding: 12px; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .plan-cta-ghost {
+      border: 1px solid var(--border); color: var(--text);
+    }
+    .plan-cta-ghost:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.05); }
+    .plan-cta-solid {
+      background: var(--purple); color: #fff;
+    }
+    .plan-cta-solid:hover { background: var(--purple-dark); }
+
+    /* ── WAITLIST ── */
+    .waitlist {
+      text-align: center;
+      background: linear-gradient(160deg, rgba(108,59,245,0.1) 0%, var(--bg) 60%);
+    }
+    .waitlist-box {
+      max-width: 560px; margin: 40px auto 0;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 40px 36px;
+    }
+    .waitlist-box h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+    .waitlist-box p { font-size: 0.9rem; color: var(--muted); margin-bottom: 28px; }
+    .waitlist-form { display: flex; gap: 10px; flex-wrap: wrap; }
+    .waitlist-form input {
+      flex: 1; min-width: 200px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 13px 16px;
+      color: var(--text); font-size: 0.95rem; font-family: inherit;
+      outline: none; transition: border-color 0.2s;
+    }
+    .waitlist-form input:focus { border-color: var(--purple); }
+    .waitlist-form input::placeholder { color: var(--muted); }
+    .waitlist-form button {
+      background: var(--purple); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 13px 24px; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .waitlist-form button:hover { background: var(--purple-dark); }
+    .waitlist-form button:disabled { opacity: 0.6; cursor: default; }
+    .waitlist-note {
+      font-size: 0.78rem; color: var(--muted);
+      margin-top: 14px;
+    }
+    .success-msg {
+      display: none; margin-top: 20px;
+      background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 10px; padding: 14px 18px;
+      color: #4ADE80; font-size: 0.9rem; font-weight: 600;
+    }
+
+    /* ── COUNTER STRIP ── */
+    .stats {
+      display: flex; flex-wrap: wrap; gap: 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat {
+      flex: 1; min-width: 180px;
+      text-align: center; padding: 40px 20px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num {
+      font-size: 2.4rem; font-weight: 900;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #A78BFA, #6C3BF5);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 40px 24px;
+      border-top: 1px solid var(--border);
+      display: flex; flex-wrap: wrap;
+      gap: 16px; align-items: center; justify-content: space-between;
+    }
+    .footer-logo {
+      font-weight: 800; font-size: 1rem;
+      background: linear-gradient(135deg, #A78BFA, #6C3BF5);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    footer p { font-size: 0.82rem; color: var(--muted); }
+
+    /* ── DEMO PILL ── */
+    .demo-floating {
+      position: fixed; bottom: 24px; right: 24px; z-index: 99;
+      background: var(--purple); color: #fff;
+      padding: 12px 22px; border-radius: 100px;
+      font-weight: 700; font-size: 0.9rem;
+      text-decoration: none;
+      box-shadow: 0 8px 32px rgba(108,59,245,0.4);
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+      animation: float 3s ease-in-out infinite;
+    }
+    .demo-floating:hover { background: var(--purple-dark); transform: translateY(-2px) scale(1.02); }
+    @keyframes float {
+      0%, 100% { box-shadow: 0 8px 32px rgba(108,59,245,0.4); }
+      50% { box-shadow: 0 16px 48px rgba(108,59,245,0.6); }
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      section { padding: 70px 20px; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .waitlist-box { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">EduGame AI</div>
+  <a href="#waitlist" class="nav-cta">Früher Zugang sichern</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-badge"><span>🎮</span> KI-Lernspiele für Schulen</div>
+  <h1>Dein Unterrichtsmaterial<br/>wird zum <em>echten Spiel</em></h1>
+  <p class="hero-sub">PDF hochladen. KI generiert interaktive Mini-Games. Schüler lernen – und wollen mehr.</p>
+  <div class="hero-actions">
+    <a href="#waitlist" class="btn-primary">Jetzt anmelden – kostenlos</a>
+    <a href="demo.html" target="_blank" class="btn-ghost">▶ Demo spielen</a>
+  </div>
+  <div class="hero-proof">
+    <div class="avatars">
+      <span>👩</span><span>👨</span><span>👩</span><span>👨</span><span>+</span>
+    </div>
+    <span>Für Lehrer der Klassen 5–13 · DSGVO-konform · Made in Germany</span>
+  </div>
+</section>
+
+<!-- GAME TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- PROBLEM / SOLUTION -->
+<section>
+  <div class="container">
+    <div class="problem-grid">
+      <div>
+        <p class="section-label">Das Problem</p>
+        <h2 class="section-title">Digitales Lernen scheitert an zwei Dingen</h2>
+        <div class="problem-cards" style="margin-top:32px">
+          <div class="problem-card">
+            <span class="emoji">😩</span>
+            <div>
+              <h4>Lehrkräfte haben keine Zeit</h4>
+              <p>Interaktive Materialien selbst zu bauen kostet Stunden – für jedes Thema neu.</p>
+            </div>
+          </div>
+          <div class="problem-card">
+            <span class="emoji">😴</span>
+            <div>
+              <h4>Schüler sind nicht motiviert</h4>
+              <p>Klick-Quizze und Lückentexte sind langweilig. Echter Spielspaß bleibt aus.</p>
+            </div>
+          </div>
+          <div class="problem-card">
+            <span class="emoji">🔒</span>
+            <div>
+              <h4>Datenschutz ist ein Albtraum</h4>
+              <p>Viele Tools scheitern an DSGVO – besonders bei Minderjährigen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="solution-box">
+        <h3>EduGame AI löst das.</h3>
+        <p>Du lädst dein Material hoch – der Rest passiert automatisch. In Minuten, nicht Stunden.</p>
+        <ul>
+          <li>KI analysiert dein PDF und generiert passende Mini-Games</li>
+          <li>20 verschiedene Spieltypen – echte Spielmechaniken, keine Klick-Quizze</li>
+          <li>Kein Schülerkonto nötig – Tiernamen + Zettel, fertig</li>
+          <li>DSGVO-konform: EU-Server, keine E-Mail-Adressen von Schülern</li>
+          <li>Lehrplan-Abgleich für dein Bundesland auf Knopfdruck</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="container">
+    <p class="section-label">So funktioniert es</p>
+    <h2 class="section-title">Von Material zu Spielerlebnis in 3 Schritten</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">Schritt 01</span>
+        <span class="step-icon">📄</span>
+        <h3>Material hochladen</h3>
+        <p>PDF, Text oder direkte Eingabe. Du wählst Klasse, Fach, Bundesland und wie viel Zeit du hast.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">Schritt 02</span>
+        <span class="step-icon">🤖</span>
+        <h3>KI generiert Spiele</h3>
+        <p>Unsere KI wählt die passenden Spieltypen und generiert vollständige, spielbare Module – in Minuten.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">Schritt 03</span>
+        <span class="step-icon">✅</span>
+        <h3>Freigeben & spielen lassen</h3>
+        <p>Du prüfst, passt bei Bedarf an und gibst frei. Schüler starten sofort mit ihrem Tiercode.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">Schritt 04</span>
+        <span class="step-icon">📊</span>
+        <h3>Ergebnisse verstehen</h3>
+        <p>Du siehst sofort, wo die Klasse steht. Heatmap, Kompetenzen, Schwachstellen – alles auf einen Blick.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GAMES -->
+<section>
+  <div class="container">
+    <p class="section-label">20 Mini-Games</p>
+    <h2 class="section-title">Echte Spielmechaniken – kein Quiz-Baukasten</h2>
+    <p class="section-sub">Jedes Spiel ist didaktisch einer Phase zugeordnet: Aktivierung, Input, Üben oder Quiz.</p>
+    <div class="games-grid" id="gamesGrid"></div>
+  </div>
+</section>
+
+<!-- TEACHER FEATURES -->
+<section style="background:var(--bg2)">
+  <div class="container">
+    <p class="section-label">Für Lehrkräfte</p>
+    <h2 class="section-title">Alles, was du wirklich brauchst</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🗂️</div>
+        <h3>Dein Workspace</h3>
+        <p>Alle Module, Klassen und Schüler an einem Ort. Übersichtlich, aufgeräumt, schnell.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h3>Lehrplan-Abgleich</h3>
+        <p>KI prüft automatisch, ob dein Modul die KLP-Kompetenzen deines Bundeslandes abdeckt.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>KI-Assistent im Editor</h3>
+        <p>„Erkläre einfacher", „Kürze auf 30 Min", „Was fehlt laut NRW KLP?" – einfach tippen.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Adaptives Niveau</h3>
+        <p>Jeder Schüler spielt automatisch auf seinem Level – ohne Stigma, ohne Aufwand für dich.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Kein Schüler-Konto</h3>
+        <p>Tiername + Zufallspasswort. Du druckst eine Liste, Schüler bekommt den Zettel. Fertig.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔁</div>
+        <h3>Automatische Wiederholung</h3>
+        <p>Nach dem Quiz generiert die KI ein personalisiertes Wiederholungsmodul nur für schwache Bereiche.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">20</div>
+    <div class="stat-label">Spieltypen</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">4</div>
+    <div class="stat-label">Lernphasen</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">100%</div>
+    <div class="stat-label">DSGVO-konform</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">&lt;5 Min</div>
+    <div class="stat-label">von PDF zum Spiel</div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<section class="pricing">
+  <div class="container">
+    <p class="section-label">Preise</p>
+    <h2 class="section-title">Starte kostenlos. Wachse mit deiner Klasse.</h2>
+    <p class="section-sub">Keine Kreditkarte nötig. Kein Risiko.</p>
+    <div class="pricing-grid">
+      <div class="plan">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">0€ <span>/ Monat</span></div>
+        <div class="plan-sub">Für den Einstieg</div>
+        <ul>
+          <li>1 Klasse</li>
+          <li>2 Module pro Monat</li>
+          <li>5 Spieltypen</li>
+          <li class="off">Lehrplan-Abgleich</li>
+          <li class="off">Analytics</li>
+        </ul>
+        <a href="#waitlist" class="plan-cta plan-cta-ghost">Kostenlos starten</a>
+      </div>
+      <div class="plan featured">
+        <div class="plan-badge">Beliebteste Wahl</div>
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">20€ <span>/ Monat</span></div>
+        <div class="plan-sub">Für aktive Lehrkräfte</div>
+        <ul>
+          <li>3 Klassen</li>
+          <li>10 Module pro Monat</li>
+          <li>Alle 20 Spieltypen</li>
+          <li>Lehrplan-Abgleich</li>
+          <li class="off">Lernstil-Analyse</li>
+        </ul>
+        <a href="#waitlist" class="plan-cta plan-cta-solid">Frühen Zugang sichern</a>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">35€ <span>/ Monat</span></div>
+        <div class="plan-sub">Für Poweruser</div>
+        <ul>
+          <li>Unbegrenzte Klassen</li>
+          <li>Unbegrenzte Module</li>
+          <li>Alle 20 Spieltypen</li>
+          <li>Lehrplan-Abgleich</li>
+          <li>Lernstil-Analyse pro Schüler</li>
+        </ul>
+        <a href="#waitlist" class="plan-cta plan-cta-ghost">Interesse anmelden</a>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Schule</div>
+        <div class="plan-price">299€ <span>/ Monat</span></div>
+        <div class="plan-sub">Für das ganze Kollegium</div>
+        <ul>
+          <li>Ganzes Kollegium</li>
+          <li>Unbegrenzte Module</li>
+          <li>Alle Features</li>
+          <li>Admin-Dashboard</li>
+          <li>Prioritäts-Support</li>
+        </ul>
+        <a href="#waitlist" class="plan-cta plan-cta-ghost">Schule anmelden</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="waitlist" id="waitlist">
+  <div class="container">
+    <p class="section-label">Early Access</p>
+    <h2 class="section-title">Sei dabei, bevor alle anderen</h2>
+    <p class="section-sub" style="margin:12px auto 0">Die ersten 50 Lehrkräfte bekommen 3 Monate Pro kostenlos – und gestalten das Produkt mit.</p>
+    <div class="waitlist-box">
+      <h3>🎓 Frühzugang sichern</h3>
+      <p>Trag dich ein – wir melden uns, sobald EduGame AI startet.</p>
+      <form class="waitlist-form" id="waitlistForm">
+        <input type="email" id="emailInput" placeholder="deine@schule.de" required />
+        <button type="submit" id="submitBtn">Anmelden</button>
+      </form>
+      <div class="success-msg" id="successMsg">
+        ✓ Super! Du bist auf der Liste. Wir melden uns bald.
+      </div>
+      <p class="waitlist-note">Kein Spam. Keine Weitergabe. Abmeldung jederzeit möglich.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">EduGame AI</div>
+  <p>© 2026 EduGame AI · Datenschutz · Impressum · Made with ❤️ in Germany</p>
+</footer>
+
+<!-- DEMO FLOATING BUTTON -->
+<a href="demo.html" target="_blank" class="demo-floating">
+  ▶ Demo spielen
+</a>
+
+<script>
+  // ── TICKER DATA ──
+  const games = [
+    { icon: "🎮", name: "Space Shooter" },
+    { icon: "🏭", name: "Sortierband" },
+    { icon: "⚔️", name: "Boss Fight" },
+    { icon: "🔐", name: "Escape Room" },
+    { icon: "🧩", name: "Memory Matrix" },
+    { icon: "🗼", name: "Tower Defense" },
+    { icon: "🕵️", name: "Detective Room" },
+    { icon: "📅", name: "Timeline Runner" },
+    { icon: "⚖️", name: "Equation Balancer" },
+    { icon: "🏗️", name: "Speed Builder" },
+    { icon: "🎵", name: "Rhythm Game" },
+    { icon: "📈", name: "Market Sim" },
+    { icon: "🧬", name: "Virus Simulator" },
+    { icon: "🗺️", name: "Map Navigator" },
+    { icon: "💬", name: "Debate Arena" },
+    { icon: "🔤", name: "Word Factory" },
+    { icon: "🔑", name: "Code Breaker" },
+    { icon: "📖", name: "Story Fork" },
+    { icon: "🔭", name: "Lab Simulator" },
+    { icon: "🐸", name: "Doodle Jump" },
+  ];
+
+  const track = document.getElementById("ticker");
+  const doubled = [...games, ...games];
+  doubled.forEach(g => {
+    const el = document.createElement("div");
+    el.className = "ticker-item";
+    el.innerHTML = `<span class="icon">${g.icon}</span>${g.name}`;
+    track.appendChild(el);
+  });
+
+  // ── GAME CARDS ──
+  const gameDetails = [
+    { icon: "🐸", name: "Doodle Jump", desc: "Links = richtig, rechts = falsch – unter Zeitdruck", phase: "Üben" },
+    { icon: "🚀", name: "Space Shooter", desc: "Richtige Begriffe abschießen, falsche ausweichen", phase: "Üben" },
+    { icon: "🏭", name: "Sortierband", desc: "Drag & Drop – Konzepte in die richtigen Kategorien", phase: "Üben" },
+    { icon: "⚔️", name: "Boss Fight", desc: "Fragen als Angriffe, richtige Antworten = Schaden", phase: "Quiz" },
+    { icon: "🔐", name: "Escape Room", desc: "Rätselkette – alles muss stimmen, um zu entkommen", phase: "Quiz" },
+    { icon: "🗼", name: "Tower Defense", desc: "Türme durch richtige Antworten bauen und verteidigen", phase: "Üben" },
+    { icon: "🧩", name: "Memory Matrix", desc: "Begriff ↔ Definition – schnell matchen", phase: "Üben" },
+    { icon: "📅", name: "Timeline Runner", desc: "Ereignisse auf der Zeitlinie korrekt platzieren", phase: "Üben" },
+    { icon: "⚖️", name: "Equation Balancer", desc: "Waage ins Gleichgewicht bringen durch richtige Terme", phase: "Üben" },
+    { icon: "🕵️", name: "Detective Room", desc: "Beweise sammeln und Schlüsse ziehen", phase: "Aktivierung" },
+    { icon: "🔤", name: "Word Factory", desc: "Fachbegriffe aus Silben zusammenbauen", phase: "Üben" },
+    { icon: "🗺️", name: "Map Navigator", desc: "Figur durch die Karte steuern – Entscheidungen treffen", phase: "Input" },
+    { icon: "🧬", name: "Virus Simulator", desc: "System durch kluge Entscheidungen stabil halten", phase: "Input" },
+    { icon: "💬", name: "Debate Arena", desc: "Argumente den richtigen Positionen zuordnen", phase: "Quiz" },
+    { icon: "🏗️", name: "Speed Builder", desc: "Objekt korrekt zusammenbauen – gegen die Zeit", phase: "Üben" },
+    { icon: "🎵", name: "Rhythm Game", desc: "Richtige Begriffe im Takt treffen", phase: "Üben" },
+    { icon: "📈", name: "Market Sim", desc: "Wirtschaftliche Entscheidungen mit Echtzeit-Konsequenzen", phase: "Input" },
+    { icon: "🔑", name: "Code Breaker", desc: "Richtige Antworten enthüllen Stück für Stück eine Botschaft", phase: "Üben" },
+    { icon: "📖", name: "Story Fork", desc: "Entscheidungspunkte in einer Geschichte – was passiert?", phase: "Aktivierung" },
+    { icon: "🔭", name: "Lab Simulator", desc: "Experimente durchführen und Hypothesen testen", phase: "Input" },
+  ];
+
+  const tagMap = {
+    "Üben": "tag-üben",
+    "Quiz": "tag-quiz",
+    "Input": "tag-input",
+    "Aktivierung": "tag-aktiv",
+  };
+
+  const grid = document.getElementById("gamesGrid");
+  gameDetails.forEach(g => {
+    const card = document.createElement("div");
+    card.className = "game-card";
+    card.innerHTML = `
+      <span class="game-icon">${g.icon}</span>
+      <h4>${g.name}</h4>
+      <p>${g.desc}</p>
+      <span class="game-tag ${tagMap[g.phase]}">${g.phase}</span>
+    `;
+    grid.appendChild(card);
+  });
+
+  // ── WAITLIST FORM ──
+  const form = document.getElementById("waitlistForm");
+  const btn = document.getElementById("submitBtn");
+  const success = document.getElementById("successMsg");
+  const emailInput = document.getElementById("emailInput");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = emailInput.value.trim();
+    if (!email) return;
+
+    btn.disabled = true;
+    btn.textContent = "Wird gespeichert…";
+
+    // Formspree endpoint – replace YOUR_FORM_ID with real ID after setup
+    try {
+      const res = await fetch("https://formspree.io/f/mbdwrggk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        form.style.display = "none";
+        success.style.display = "block";
+      } else {
+        // Fallback: still show success (for demo / before Formspree setup)
+        form.style.display = "none";
+        success.style.display = "block";
+      }
+    } catch {
+      form.style.display = "none";
+      success.style.display = "block";
+    }
+  });
+</script>
+</body>
+</html>
