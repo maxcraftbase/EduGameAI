@@ -25,6 +25,7 @@ export default function ClassesPage() {
   const [klassen, setKlassen] = useState<Klasse[]>([])
   const [showForm, setShowForm] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
   const [selectedKlasse, setSelectedKlasse] = useState<string | null>(null)
   const [codes, setCodes] = useState<string[]>([])
   const [anzahl, setAnzahl] = useState(25)
@@ -40,13 +41,29 @@ export default function ClassesPage() {
     const name = (form.elements.namedItem('name') as HTMLInputElement).value
     const jahrgangsstufe = (form.elements.namedItem('jahrgangsstufe') as HTMLInputElement).value
     const fach = (form.elements.namedItem('fach') as HTMLInputElement).value
+
     startTransition(async () => {
+      setError(null)
       const supabase = createClient()
-      const { data } = await supabase.from('classes').insert({ name, jahrgangsstufe, fach }).select().single()
-      if (data) setKlassen((prev) => [data, ...prev])
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setError('Nicht eingeloggt.'); return }
+
+      const { data, error: dbError } = await supabase
+        .from('classes')
+        .insert({ name, jahrgangsstufe, fach, lehrer_id: user.id })
+        .select()
+        .single()
+
+      if (dbError || !data) {
+        setError('Klasse konnte nicht angelegt werden.')
+        return
+      }
+      setKlassen((prev) => [data, ...prev])
       setShowForm(false)
     })
   }
+
+  const selectedKlasseData = klassen.find((k) => k.id === selectedKlasse)
 
   return (
     <div className="p-8 max-w-2xl">
@@ -55,7 +72,7 @@ export default function ClassesPage() {
           <h1 className="text-2xl font-bold">Klassen</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Klassen anlegen und Schüler-Codes generieren</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)}
+        <button onClick={() => { setShowForm(!showForm); setError(null) }}
           className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
           + Klasse anlegen
         </button>
@@ -67,23 +84,28 @@ export default function ClassesPage() {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1">Bezeichnung</label>
-              <input name="name" required placeholder="z.B. 9a" className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
+              <input name="name" required placeholder="z.B. 9a"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1">Stufe</label>
-              <input name="jahrgangsstufe" required placeholder="z.B. 9" className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
+              <input name="jahrgangsstufe" required placeholder="z.B. 9"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1">Fach</label>
-              <input name="fach" required placeholder="z.B. Biologie" className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
+              <input name="fach" required placeholder="z.B. Biologie"
+                className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
             </div>
           </div>
+          {error && <p className="text-xs text-red-600 bg-red-50 rounded-md px-3 py-2">{error}</p>}
           <div className="flex gap-2">
             <button type="submit" disabled={isPending}
               className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
-              Anlegen
+              {isPending ? 'Anlegen…' : 'Anlegen'}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="text-sm text-muted-foreground hover:text-foreground px-4 py-2">
+            <button type="button" onClick={() => { setShowForm(false); setError(null) }}
+              className="text-sm text-muted-foreground hover:text-foreground px-4 py-2">
               Abbrechen
             </button>
           </div>
@@ -105,25 +127,44 @@ export default function ClassesPage() {
                 <p className="font-medium text-sm">{k.name}</p>
                 <p className="text-xs text-muted-foreground">Klasse {k.jahrgangsstufe} · {k.fach}</p>
               </div>
+              <span className="text-xs text-muted-foreground">
+                {selectedKlasse === k.id ? 'ausgewählt' : 'auswählen →'}
+              </span>
             </div>
           ))}
         </div>
       )}
 
-      {selectedKlasse && (
+      {selectedKlasse && selectedKlasseData && (
         <div className="border rounded-xl p-5">
-          <h3 className="font-semibold mb-3">Schüler-Codes generieren</h3>
-          <p className="text-xs text-muted-foreground mb-4">
-            Jeder Code besteht aus einem Tier-Namen und einer Zufallszahl. Kein Klarname, keine E-Mail — DSGVO-konform.
+          <h3 className="font-semibold mb-1">Schüler-Codes — {selectedKlasseData.name}</h3>
+          <p className="text-xs text-muted-foreground mb-5">
+            Kein Klarname, keine E-Mail — DSGVO-konform. Codes ausdrucken und verteilen.
           </p>
-          <div className="flex items-center gap-3 mb-4">
-            <label className="text-sm">Anzahl Schüler:</label>
-            <input type="number" value={anzahl} min={1} max={40}
-              onChange={(e) => setAnzahl(parseInt(e.target.value) || 1)}
-              className="w-20 border rounded-md px-3 py-1.5 text-sm bg-background" />
-            <button onClick={() => setCodes(generateCodes(anzahl))}
-              className="bg-primary text-primary-foreground rounded-md px-4 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors">
-              Generieren
+
+          {/* Anzahl + Generieren */}
+          <div className="flex items-center gap-3 mb-5 p-4 bg-muted/30 rounded-xl">
+            <span className="text-sm font-medium">Anzahl Schüler:</span>
+            <div className="flex items-center gap-1 border rounded-lg overflow-hidden bg-background">
+              <button
+                onClick={() => setAnzahl((n) => Math.max(1, n - 1))}
+                className="px-3 py-2 text-sm font-bold hover:bg-muted transition-colors">−</button>
+              <input
+                type="number"
+                value={anzahl}
+                min={1}
+                max={40}
+                onChange={(e) => setAnzahl(parseInt(e.target.value) || 1)}
+                className="w-14 text-center text-sm py-2 outline-none bg-background font-medium"
+              />
+              <button
+                onClick={() => setAnzahl((n) => Math.min(40, n + 1))}
+                className="px-3 py-2 text-sm font-bold hover:bg-muted transition-colors">+</button>
+            </div>
+            <button
+              onClick={() => setCodes(generateCodes(anzahl))}
+              className="bg-primary text-primary-foreground rounded-lg px-5 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
+              Codes generieren
             </button>
           </div>
 
@@ -131,7 +172,7 @@ export default function ClassesPage() {
             <div>
               <div className="border rounded-lg p-4 mb-3 bg-white">
                 <p className="text-xs font-medium text-muted-foreground mb-3">
-                  Schüler-Codes — {klassen.find((k) => k.id === selectedKlasse)?.name} — ausschneiden und verteilen
+                  {codes.length} Codes für {selectedKlasseData.name} — ausschneiden und verteilen
                 </p>
                 <div className="grid grid-cols-4 gap-2">
                   {codes.map((code, i) => (
@@ -141,7 +182,8 @@ export default function ClassesPage() {
                   ))}
                 </div>
               </div>
-              <button onClick={() => window.print()} className="text-sm text-primary hover:underline">
+              <button onClick={() => window.print()}
+                className="text-sm text-primary hover:underline">
                 🖨️ Drucken
               </button>
             </div>
