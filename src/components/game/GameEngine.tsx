@@ -155,7 +155,7 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
         <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${fortschritt}%` }} />
       </div>
 
-      <div className="border rounded-2xl p-6">
+      <div key={current} className="border rounded-2xl p-6">
         {format === 'hangman' ? (
           <Hangman
             text={aufgabe.text}
