@@ -118,7 +118,6 @@ function buildAnalyseRow(
     antwortformat_sekundaer: l.schritt_10_antwortformat['sekundäres_format'],
     spielfunktion: l.schritt_9_ampel.spielfunktion,
     abdeckung: l.schritt_9_ampel.abdeckung,
-    raw_output: { analyse: a, lernziel: l } as Record<string, unknown>,
   }
 }
 
@@ -146,7 +145,6 @@ function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput) {
     zeitregelung_sekunden: null,
     zeitdruck_aktiv: false,
     status: 'entwurf',
-    raw_output: s as unknown as Record<string, unknown>,
   }
 }
 
@@ -162,6 +160,5 @@ function buildCheckRow(spielId: string, c: ValidationOutput) {
     spielfunktion: check.spielfunktion,
     hinweise_fuer_lehrkraft: check.hinweise_fuer_lehrkraft,
     begruendung_anpassungen: check.begruendung_anpassungen,
-    raw_output: c as unknown as Record<string, unknown>,
   }
 }
