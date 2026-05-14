@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Step = 'enter' | 'found' | 'error'
 
@@ -18,6 +19,7 @@ interface LookupResult {
 }
 
 export default function SpielerPage() {
+  const router = useRouter()
   const [step, setStep] = useState<Step>('enter')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -186,7 +188,7 @@ export default function SpielerPage() {
                       boxShadow: '0 0 24px rgba(168,85,247,0.5)',
                       cursor: 'pointer',
                     }}
-                    onClick={() => alert('Spielstart kommt bald! 🚀')}>
+                    onClick={() => router.push(`/play/${spiel.id}?code=${encodeURIComponent(result.code)}`)}>
                     ▶ Spiel starten
                   </button>
                 </div>

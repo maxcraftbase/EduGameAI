@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { GameEngine } from '@/components/game/GameEngine'
 
 type Phase = 'entry' | 'loading' | 'playing' | 'error'
@@ -30,17 +31,23 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
   const [niveau] = useState<Differenzierungsniveau>('mittel')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const searchParams = useSearchParams()
 
   // gameId aus Params extrahieren (einmal beim ersten Render)
   if (gameId === null) {
     params.then(({ gameId: id }) => setGameId(id))
   }
 
-  function onSubmitCode(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = e.currentTarget
-    const code = (form.elements.namedItem('code') as HTMLInputElement).value.trim().toUpperCase()
+  // Auto-start wenn Code per URL übergeben wird (von /spielen)
+  useEffect(() => {
+    const codeParam = searchParams.get('code')
+    if (codeParam && gameId && phase === 'entry') {
+      startSession(gameId, codeParam)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId, searchParams])
 
+  function startSession(gId: string, code: string) {
     startTransition(async () => {
       setPhase('loading')
       setError(null)
@@ -48,7 +55,7 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
         const res = await fetch('/api/sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ spielId: gameId, code, differenzierungsniveau: niveau }),
+          body: JSON.stringify({ spielId: gId, code, differenzierungsniveau: niveau }),
         })
         if (!res.ok) {
           const body = await res.json()
@@ -66,6 +73,14 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
         setPhase('error')
       }
     })
+  }
+
+  function onSubmitCode(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const form = e.currentTarget
+    const code = (form.elements.namedItem('code') as HTMLInputElement).value.trim().toUpperCase()
+
+    if (gameId) startSession(gameId, code)
   }
 
   if (phase === 'playing' && sessionData) {
