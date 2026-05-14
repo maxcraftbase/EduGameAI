@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { GameEngine } from '@/components/game/GameEngine'
 
@@ -24,8 +24,7 @@ const SKIN_LABEL: Record<string, string> = {
   oberstufe: 'Analyse-Modus',
 }
 
-export default function PlayPage({ params }: { params: Promise<{ gameId: string }> }) {
-  const [gameId, setGameId] = useState<string | null>(null)
+function PlayInner({ gameId }: { gameId: string }) {
   const [phase, setPhase] = useState<Phase>('entry')
   const [sessionData, setSessionData] = useState<SessionData | null>(null)
   const [niveau] = useState<Differenzierungsniveau>('mittel')
@@ -33,21 +32,7 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
   const [isPending, startTransition] = useTransition()
   const searchParams = useSearchParams()
 
-  // gameId aus Params extrahieren (einmal beim ersten Render)
-  if (gameId === null) {
-    params.then(({ gameId: id }) => setGameId(id))
-  }
-
-  // Auto-start wenn Code per URL übergeben wird (von /spielen)
-  useEffect(() => {
-    const codeParam = searchParams.get('code')
-    if (codeParam && gameId && phase === 'entry') {
-      startSession(gameId, codeParam)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, searchParams])
-
-  function startSession(gId: string, code: string) {
+  function startSession(code: string) {
     startTransition(async () => {
       setPhase('loading')
       setError(null)
@@ -55,7 +40,7 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
         const res = await fetch('/api/sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ spielId: gId, code, differenzierungsniveau: niveau }),
+          body: JSON.stringify({ spielId: gameId, code, differenzierungsniveau: niveau }),
         })
         if (!res.ok) {
           const body = await res.json()
@@ -75,12 +60,19 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
     })
   }
 
+  // Auto-start wenn Code per URL übergeben (von /spielen)
+  useEffect(() => {
+    const codeParam = searchParams.get('code')
+    if (codeParam && phase === 'entry') {
+      startSession(codeParam)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function onSubmitCode(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const form = e.currentTarget
-    const code = (form.elements.namedItem('code') as HTMLInputElement).value.trim().toUpperCase()
-
-    if (gameId) startSession(gameId, code)
+    const code = (e.currentTarget.elements.namedItem('code') as HTMLInputElement).value.trim().toUpperCase()
+    startSession(code)
   }
 
   if (phase === 'playing' && sessionData) {
@@ -101,7 +93,6 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/20 p-4">
       <div className="w-full max-w-sm">
-        {/* Loading */}
         {phase === 'loading' && (
           <div className="text-center">
             <div className="text-4xl mb-4 animate-pulse">{SKIN_EMOJI[skin]}</div>
@@ -109,7 +100,6 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
           </div>
         )}
 
-        {/* Code-Eingabe */}
         {(phase === 'entry' || phase === 'error') && (
           <div className="bg-background border rounded-2xl shadow-sm p-8">
             <div className="text-center mb-6">
@@ -121,19 +111,15 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
             </div>
 
             <form onSubmit={onSubmitCode} className="flex flex-col gap-4">
-              <div>
-                <label htmlFor="code" className="block text-sm font-medium mb-1 sr-only">Tier-Code</label>
-                <input
-                  id="code"
-                  name="code"
-                  type="text"
-                  required
-                  autoFocus
-                  autoComplete="off"
-                  placeholder="z.B. TIGER-7K2"
-                  className="w-full border rounded-xl px-4 py-3 text-sm text-center tracking-widest font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
+              <input
+                name="code"
+                type="text"
+                required
+                autoFocus
+                autoComplete="off"
+                placeholder="z.B. TIGER-7K2"
+                className="w-full border rounded-xl px-4 py-3 text-sm text-center tracking-widest font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary"
+              />
 
               {error && (
                 <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 text-center">{error}</p>
@@ -151,5 +137,31 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
         )}
       </div>
     </div>
+  )
+}
+
+export default function PlayPage({ params }: { params: Promise<{ gameId: string }> }) {
+  const [gameId, setGameId] = useState<string | null>(null)
+
+  if (gameId === null) {
+    params.then(({ gameId: id }) => setGameId(id))
+  }
+
+  if (!gameId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-4xl animate-pulse">🚀</div>
+      </div>
+    )
+  }
+
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-4xl animate-pulse">🚀</div>
+      </div>
+    }>
+      <PlayInner gameId={gameId} />
+    </Suspense>
   )
 }
