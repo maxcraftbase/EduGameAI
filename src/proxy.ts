@@ -29,7 +29,7 @@ export async function proxy(request: NextRequest) {
 
   // Dashboard-Routen erfordern Login
   const protectedPaths = ['/dashboard', '/playground', '/modules', '/classes', '/results', '/spiele', '/einstellungen']
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p))
+  const isProtected = protectedPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
 
   if (isProtected && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
