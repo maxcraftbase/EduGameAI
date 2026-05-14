@@ -1,18 +1,13 @@
+import { extractText } from 'unpdf'
 import { MaterialAbschnitt } from '@/types'
 
-// PDF-Text extrahieren und in Abschnitte aufteilen
 export async function extractTextFromPDF(buffer: Buffer): Promise<{
   fullText: string
   abschnitte: MaterialAbschnitt[]
 }> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { PDFParse } = require('pdf-parse')
-  const parser = new PDFParse({ data: buffer })
-  const data = await parser.getText() as { text: string }
+  const { text: pages } = await extractText(new Uint8Array(buffer))
+  const fullText = pages.join('\n\n')
 
-  const fullText = data.text
-
-  // Text in Abschnitte aufteilen (Absätze, min. 100 Zeichen)
   const rawAbschnitte = fullText
     .split(/\n{2,}/)
     .map((t) => t.replace(/\n/g, ' ').trim())
