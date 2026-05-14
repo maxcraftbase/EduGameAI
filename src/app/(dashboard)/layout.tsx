@@ -8,7 +8,6 @@ const navItems = [
   { href: '/playground', label: 'Game erstellen', icon: '✦' },
   { href: '/spiele', label: 'Spiele & Ordner', icon: '▤' },
   { href: '/classes', label: 'Klassen & Schüler', icon: '⊙' },
-  { href: '/results', label: 'Auswertungen', icon: '◈' },
 ]
 
 const bottomItems = [
