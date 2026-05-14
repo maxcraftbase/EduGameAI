@@ -7,10 +7,10 @@ import Link from 'next/link'
 interface Spiel {
   id: string
   titel: string
+  game_skin: string
+  spieltyp_didaktisch: string
   status: 'entwurf' | 'freigegeben' | 'archiviert'
   erstellt_am: string
-  fach?: string
-  jahrgangsstufe?: string
 }
 
 const STATUS_CONFIG = {
@@ -34,7 +34,7 @@ export default function SpielePage() {
   useEffect(() => {
     createClient()
       .from('games')
-      .select('id, titel, status, erstellt_am, fach, jahrgangsstufe')
+      .select('id, titel, game_skin, spieltyp_didaktisch, status, erstellt_am')
       .order('erstellt_am', { ascending: false })
       .then(({ data }) => {
         setSpiele(data ?? [])
@@ -118,7 +118,7 @@ export default function SpielePage() {
                     {spiel.titel || 'Unbenanntes Spiel'}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: '#7A6A94' }}>
-                    {[spiel.fach, spiel.jahrgangsstufe ? `Klasse ${spiel.jahrgangsstufe}` : null]
+                    {[spiel.spieltyp_didaktisch, spiel.game_skin]
                       .filter(Boolean).join(' · ')} · {new Date(spiel.erstellt_am).toLocaleDateString('de-DE')}
                   </p>
                 </div>
