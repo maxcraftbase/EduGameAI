@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 // ============================================================
-// Zod-Schemas für alle 5 Pipeline-Schritte
+// Zod-Schemas für alle 6 Pipeline-Schritte
 // Jeder Schema entspricht exakt dem Output-Format des jeweiligen Prompts
 // ============================================================
 
@@ -61,7 +61,7 @@ const KomplexitaetsstufeSchema = z.union([
   z.literal(5), z.literal(6), z.literal(7),
 ])
 
-// Nur implementierte Templates — wird erweitert wenn neue Komponenten gebaut sind
+// Alle implementierten Templates inkl. neuer Skins (boss_fight, sprint_quiz, escape_room)
 const AntwortformatSchema = z.enum([
   'single_choice',
   'multiple_choice',
@@ -69,6 +69,9 @@ const AntwortformatSchema = z.enum([
   'reihenfolge',
   'hangman',
   'space_invaders',
+  'boss_fight',
+  'sprint_quiz',
+  'escape_room',
 ])
 
 const AmpelSchema = z.enum(['gruen', 'gelb', 'rot'])
@@ -168,7 +171,48 @@ export const LernzielOutputSchema = z.object({
 
 export type LernzielOutput = z.infer<typeof LernzielOutputSchema>
 
-// --- Schema 3: Spielgenerierung (Prompt 03, Schritte 11–16) --
+// --- Schema 3: Spielmapping (Prompt 03) ----------------------
+
+const SpielvorschlagTypSchema = z.enum([
+  'beste_didaktische_passung',
+  'alternative_mechanik',
+  'staerker_motivierend',
+  'diagnostisch_stark',
+  'differenzierung_transfer',
+])
+
+const SpielvorschlagRangSchema = z.union([
+  z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5),
+])
+
+const SpielvorschlagSchema = z.object({
+  rang: SpielvorschlagRangSchema,
+  typ: SpielvorschlagTypSchema,
+  name: z.string().min(1),
+  didaktischer_spieltyp: z.string().min(1),
+  game_engine: AntwortformatSchema,
+  game_skin_konzept: z.string().min(1),
+  game_skin_mvp: z.enum(['unterstufe', 'mittelstufe', 'oberstufe']),
+  antwortformate: z.array(AntwortformatSchema).min(1),
+  passung_begruendung: z.string().min(1),
+  mvp_ampel: AmpelSchema,
+  regelbasiert_auswertbar: z.boolean(),
+  differenzierung_moeglichkeiten: z.string(),
+  typische_fehler_fehlvorstellungen: z.array(z.string()),
+  feedbacklogik: z.string().min(1),
+  spielfunktion: SpielreihefunktionSchema,
+})
+
+export const SpielmappingOutputSchema = z.object({
+  lerngegenstand_kurz: z.string().min(1),
+  vorschlaege: z.array(SpielvorschlagSchema).length(5),
+  ausgewaehlter_vorschlag_rang: SpielvorschlagRangSchema,
+  auswahlbegruendung: z.string().min(1),
+})
+
+export type SpielmappingOutput = z.infer<typeof SpielmappingOutputSchema>
+
+// --- Schema 4: Spielgenerierung (Prompt 04, Schritte 11–16) --
 
 const DifferenzierungsStufeSchema = z.object({
   aufgabentext_variante: z.union([z.string(), z.null()]),

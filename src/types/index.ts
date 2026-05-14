@@ -62,6 +62,9 @@ export type Antwortformat =
   | 'reihenfolge'
   | 'hangman'
   | 'space_invaders'
+  | 'boss_fight'
+  | 'sprint_quiz'
+  | 'escape_room'
 
 export type SpielbarkeitsAmpel = 'gruen' | 'gelb' | 'rot'
 
@@ -93,6 +96,42 @@ export type GameEngine =
 
 // Visuelle Spieloberfläche je Altersstufe
 export type GameSkin = 'unterstufe' | 'mittelstufe' | 'oberstufe'
+
+// --- Spielmapping Types --------------------------------------
+
+export type SpielvorschlagTyp =
+  | 'beste_didaktische_passung'
+  | 'alternative_mechanik'
+  | 'staerker_motivierend'
+  | 'diagnostisch_stark'
+  | 'differenzierung_transfer'
+
+export type SpielvorschlagRang = 1 | 2 | 3 | 4 | 5
+
+export interface Spielvorschlag {
+  rang: SpielvorschlagRang
+  typ: SpielvorschlagTyp
+  name: string
+  didaktischer_spieltyp: string
+  game_engine: Antwortformat
+  game_skin_konzept: string
+  game_skin_mvp: GameSkin
+  antwortformate: Antwortformat[]
+  passung_begruendung: string
+  mvp_ampel: SpielbarkeitsAmpel
+  regelbasiert_auswertbar: boolean
+  differenzierung_moeglichkeiten: string
+  typische_fehler_fehlvorstellungen: string[]
+  feedbacklogik: string
+  spielfunktion: Spielfunktion
+}
+
+export interface SpielmappingOutput {
+  lerngegenstand_kurz: string
+  vorschlaege: Spielvorschlag[]
+  ausgewaehlter_vorschlag_rang: SpielvorschlagRang
+  auswahlbegruendung: string
+}
 
 // --- Core Data Models ----------------------------------------
 

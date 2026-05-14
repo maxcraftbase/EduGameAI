@@ -5,11 +5,13 @@ import { ZodSchema, ZodError } from 'zod'
 import {
   AnalyseOutputSchema,
   LernzielOutputSchema,
+  SpielmappingOutputSchema,
   SpielOutputSchema,
   ValidationOutputSchema,
   DiagnoseOutputSchema,
   type AnalyseOutput,
   type LernzielOutput,
+  type SpielmappingOutput,
   type SpielOutput,
   type ValidationOutput,
   type DiagnoseOutput,
@@ -127,18 +129,44 @@ export async function determineLearningObjective(input: {
   )
 }
 
+// --- Spielmapping: 5 Spielvorschläge -------------------------
+export async function runSpielMapping(input: {
+  analyse: AnalyseOutput
+  lernziel: LernzielOutput
+  kontext: { fach: string; jahrgangsstufe: string; schulform: string; bundesland: string; zeitrahmenMinuten: number }
+}): Promise<SpielmappingOutput> {
+  return callClaude(
+    'Spielmapping (5 Vorschläge)',
+    loadPrompt('03_spielmapping.md'),
+    JSON.stringify({
+      analyse: input.analyse,
+      lernziel: input.lernziel,
+      kontext: {
+        fach: input.kontext.fach,
+        jahrgangsstufe: input.kontext.jahrgangsstufe,
+        schulform: input.kontext.schulform,
+        bundesland: input.kontext.bundesland,
+        zeitrahmen_minuten: input.kontext.zeitrahmenMinuten,
+      },
+    }),
+    SpielmappingOutputSchema
+  )
+}
+
 // --- Schritt 11–16: Spielgenerierung -------------------------
 export async function generateGame(input: {
   analyse: AnalyseOutput
   lernziel: LernzielOutput
+  spielmapping: SpielmappingOutput
   kontext: { jahrgangsstufe: string; fach: string; zeitrahmenMinuten: number }
 }): Promise<SpielOutput> {
   return callClaude(
     'Spielgenerierung (Schritte 11–16)',
-    loadPrompt('03_game_generation.md'),
+    loadPrompt('04_game_generation.md'),
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
+      spielmapping: input.spielmapping,
       kontext: {
         jahrgangsstufe: input.kontext.jahrgangsstufe,
         fach: input.kontext.fach,
@@ -158,7 +186,7 @@ export async function validateAndCheck(input: {
 }): Promise<ValidationOutput> {
   return callClaude(
     'Validierung & Lehrkraft-Check (Schritte 17–21)',
-    loadPrompt('04_validation_lehrkraft_check.md'),
+    loadPrompt('05_validation_lehrkraft_check.md'),
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
@@ -178,7 +206,7 @@ export async function runDiagnosis(input: {
 }): Promise<DiagnoseOutput> {
   return callClaude(
     'Lernstandsdiagnose',
-    loadPrompt('05_diagnosis_engine.md'),
+    loadPrompt('06_diagnosis_engine.md'),
     JSON.stringify({
       spiel_metadaten: input.spielMetadaten,
       aufgaben_metadaten: input.aufgabenMetadaten,
@@ -191,7 +219,7 @@ export async function runDiagnosis(input: {
 
 export type ProgressEvent = { label: string; percent: number; schrittIndex: number }
 
-// --- Vollständige 21-Schritt-Pipeline ------------------------
+// --- Vollständige Pipeline (mit Spielmapping) ----------------
 export async function runFullPipeline(input: {
   materialText: string
   abschnitte: { id: string; text: string }[]
@@ -207,6 +235,7 @@ export async function runFullPipeline(input: {
 }): Promise<{
   analyse: AnalyseOutput
   lernziel: LernzielOutput
+  spielmapping: SpielmappingOutput
   spiel: SpielOutput
   check: ValidationOutput
 }> {
@@ -214,15 +243,18 @@ export async function runFullPipeline(input: {
   p?.({ label: 'Material wird analysiert …', percent: 5, schrittIndex: 0 })
   const analyse = await analyzeMaterial(input)
 
-  p?.({ label: 'Lernziel wird bestimmt …', percent: 30, schrittIndex: 6 })
+  p?.({ label: 'Lernziel wird bestimmt …', percent: 25, schrittIndex: 6 })
   const lernziel = await determineLearningObjective({ analyse, lernzielLehrkraft: input.lernzielLehrkraft })
 
-  p?.({ label: 'Spiel wird generiert …', percent: 55, schrittIndex: 10 })
-  const spiel = await generateGame({ analyse, lernziel, kontext: input.kontext })
+  p?.({ label: 'Spielmapping wird erstellt …', percent: 48, schrittIndex: 10 })
+  const spielmapping = await runSpielMapping({ analyse, lernziel, kontext: input.kontext })
 
-  p?.({ label: 'Wird geprüft …', percent: 82, schrittIndex: 16 })
+  p?.({ label: 'Spiel wird generiert …', percent: 68, schrittIndex: 13 })
+  const spiel = await generateGame({ analyse, lernziel, spielmapping, kontext: input.kontext })
+
+  p?.({ label: 'Wird geprüft …', percent: 87, schrittIndex: 17 })
   const check = await validateAndCheck({ analyse, lernziel, spiel, abschnitte: input.abschnitte })
 
-  p?.({ label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 20 })
-  return { analyse, lernziel, spiel, check }
+  p?.({ label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 21 })
+  return { analyse, lernziel, spielmapping, spiel, check }
 }

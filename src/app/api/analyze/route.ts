@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runFullPipeline, PipelineValidationError, PipelineJsonError, PipelineApiError } from '@/lib/claude/pipeline'
 import { createClient } from '@/lib/supabase/server'
-import type { AnalyseOutput, LernzielOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
+import type { AnalyseOutput, LernzielOutput, SpielmappingOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
 
 const enc = new TextEncoder()
 function sseEvent(data: Record<string, unknown>) {
@@ -49,14 +49,14 @@ export async function POST(request: NextRequest) {
 
         const { data: analyse, error: analyseError } = await supabase
           .from('analyses')
-          .insert(buildAnalyseRow(materialId, result.analyse, result.lernziel))
+          .insert(buildAnalyseRow(materialId, result.analyse, result.lernziel, result.spielmapping))
           .select()
           .single()
         if (analyseError) throw analyseError
 
         const { data: spiel, error: spielError } = await supabase
           .from('games')
-          .insert(buildSpielRow(analyse.id, user.id, result.spiel))
+          .insert(buildSpielRow(analyse.id, user.id, result.spiel, result.spielmapping))
           .select()
           .single()
         if (spielError) throw spielError
@@ -96,7 +96,8 @@ export async function POST(request: NextRequest) {
 function buildAnalyseRow(
   materialId: string,
   a: AnalyseOutput,
-  l: LernzielOutput
+  l: LernzielOutput,
+  sm: SpielmappingOutput
 ) {
   return {
     material_id: materialId,
@@ -118,10 +119,12 @@ function buildAnalyseRow(
     antwortformat_sekundaer: l.schritt_10_antwortformat['sekundäres_format'],
     spielfunktion: l.schritt_9_ampel.spielfunktion,
     abdeckung: l.schritt_9_ampel.abdeckung,
+    spielmapping: sm,
   }
 }
 
-function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput) {
+function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput, sm: SpielmappingOutput) {
+  const selectedVorschlag = sm.vorschlaege.find(v => v.rang === sm.ausgewaehlter_vorschlag_rang)
   const aufgaben = s.schritt_14_aufgaben.map((q) => ({
     aufgabe_id: q.aufgabe_id,
     text: q.text,
@@ -137,7 +140,7 @@ function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput) {
   return {
     analyse_id: analyseId,
     lehrer_id: lehrerId,
-    titel: `Spiel – ${new Date().toLocaleDateString('de-DE')}`,
+    titel: selectedVorschlag ? `${selectedVorschlag.name} – ${new Date().toLocaleDateString('de-DE')}` : `Spiel – ${new Date().toLocaleDateString('de-DE')}`,
     spieltyp_didaktisch: s.schritt_13_spieltyp_didaktisch,
     game_engine: s.schritt_11_game_engine.engine_typ,
     game_skin: s.schritt_12_game_skin.altersstufe,

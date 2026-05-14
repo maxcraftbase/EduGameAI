@@ -6,6 +6,9 @@ import { Zuordnung } from './Zuordnung'
 import { Reihenfolge } from './Reihenfolge'
 import { Hangman } from './Hangman'
 import { SpaceInvaders } from './SpaceInvaders'
+import { BossFight } from './BossFight'
+import { SprintQuiz } from './SprintQuiz'
+import { EscapeRoom } from './EscapeRoom'
 
 interface Aufgabe {
   aufgabe_id: string
@@ -62,6 +65,21 @@ const SKIN_LABEL: Record<string, string> = {
   unterstufe: '🐾 Lern-Abenteuer',
   mittelstufe: '🚀 Mission',
   oberstufe: '📊 Analyse',
+  // Neue Skins
+  'Boss Battle': '⚔️ Boss Fight',
+  'Sprint-Bahn': '🏃 Sprint',
+  'Escape Room': '🔐 Escape',
+  'Detective Room': '🔍 Detektiv',
+  'Radar-Scanner': '📡 Radar',
+  'Puzzle-Karte': '🗺️ Puzzle',
+  'Entdeckerkarte': '🧩 Entdecken',
+  'Story-Fork': '📖 Story',
+  'Werkstatt-Band': '🏭 Werkstatt',
+  'Flow-Kette': '⛓️ Prozess',
+  'Werkzeugkasten': '🔧 Begriffe',
+  'Fehler-Scanner': '🔬 Fehler',
+  'Waage': '⚖️ Kriterien',
+  'Arena': '🏆 Gauntlet',
 }
 
 export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
@@ -152,6 +170,26 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
             loesungen={aufgabe.loesungen}
             distraktoren={aufgabe.distraktoren ?? []}
             feedback={feedback}
+            onAntwort={handleAntwort}
+          />
+        ) : format === 'boss_fight' ? (
+          <BossFight
+            text={aufgabe.text}
+            optionen={buildOptionen(aufgabe)}
+            onAntwort={handleAntwort}
+          />
+        ) : format === 'sprint_quiz' ? (
+          <SprintQuiz
+            text={aufgabe.text}
+            optionen={buildOptionen(aufgabe)}
+            onAntwort={handleAntwort}
+          />
+        ) : format === 'escape_room' ? (
+          <EscapeRoom
+            text={aufgabe.text}
+            optionen={buildOptionen(aufgabe)}
+            schlossNummer={current + 1}
+            gesamtSchloesser={aufgaben.length}
             onAntwort={handleAntwort}
           />
         ) : format === 'reihenfolge' ? (
