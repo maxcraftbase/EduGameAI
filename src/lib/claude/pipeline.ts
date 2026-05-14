@@ -72,13 +72,14 @@ async function callClaude<T>(
   schritt: string,
   systemPrompt: string,
   userMessage: string,
-  schema: ZodSchema<T>
+  schema: ZodSchema<T>,
+  maxTokens = 8192
 ): Promise<T> {
   let response
   try {
     response = await getClient().messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 8192,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     })
@@ -221,7 +222,8 @@ export async function validateAndCheck(input: {
       spiel: input.spiel,
       originalmaterial_abschnitte: input.abschnitte,
     }),
-    ValidationOutputSchema
+    ValidationOutputSchema,
+    16384
   )
 }
 
