@@ -1,34 +1,34 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
     const email = (form.elements.namedItem('email') as HTMLInputElement).value
     const password = (form.elements.namedItem('password') as HTMLInputElement).value
 
-    startTransition(async () => {
-      setError(null)
-      const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: `${window.location.origin}/api/auth/callback` },
-      })
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccess(true)
-      }
+    setLoading(true)
+    setError(null)
+    const supabase = createClient()
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/api/auth/callback` },
     })
+    setLoading(false)
+    if (error) {
+      setError(error.message)
+    } else {
+      setSuccess(true)
+    }
   }
 
   if (success) {
@@ -128,13 +128,13 @@ export default function SignupPage() {
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={loading}
           className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 mt-1"
           style={{ background: 'oklch(0.55 0.24 290)', color: 'white', boxShadow: '0 4px 16px oklch(0.55 0.24 290 / 35%)' }}
-          onMouseEnter={e => !isPending && (e.currentTarget.style.background = 'oklch(0.60 0.24 290)')}
+          onMouseEnter={e => !loading && (e.currentTarget.style.background = 'oklch(0.60 0.24 290)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'oklch(0.55 0.24 290)')}
         >
-          {isPending ? 'Registrieren…' : 'Konto erstellen →'}
+          {loading ? 'Registrieren…' : 'Konto erstellen →'}
         </button>
       </form>
 
