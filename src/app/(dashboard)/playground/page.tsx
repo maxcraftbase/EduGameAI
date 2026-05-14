@@ -58,7 +58,9 @@ const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, marginBott
 export default function GameErstellenPage() {
   const [step, setStep] = useState<Step>('upload')
   const [file, setFile] = useState<File | null>(null)
-  const [laufenderSchritt, setLaufenderSchritt] = useState(0)
+  const [progressPercent, setProgressPercent] = useState(0)
+  const [progressLabel, setProgressLabel] = useState('')
+  const [progressSchrittIndex, setProgressSchrittIndex] = useState(0)
   const [analyseResult, setAnalyseResult] = useState<AnalyseResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -80,9 +82,9 @@ export default function GameErstellenPage() {
     startTransition(async () => {
       setStep('analysing')
       setErrorMsg(null)
-      const interval = setInterval(() => {
-        setLaufenderSchritt((s) => Math.min(s + 1, ANALYSE_SCHRITTE.length - 1))
-      }, 3000)
+      setProgressPercent(0)
+      setProgressLabel('Upload läuft …')
+      setProgressSchrittIndex(0)
 
       try {
         const formData = new FormData()
@@ -105,16 +107,38 @@ export default function GameErstellenPage() {
           body: JSON.stringify({ materialId: material.id, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen }),
         })
         if (!analyseRes.ok) {
-          const body = await analyseRes.json()
+          const body = await analyseRes.json().catch(() => ({}))
           throw new Error(body.error ?? 'Analyse fehlgeschlagen')
         }
-        const data = await analyseRes.json()
-        clearInterval(interval)
-        setLaufenderSchritt(ANALYSE_SCHRITTE.length)
-        setAnalyseResult({ spielId: data.spielId, result: data.result })
-        setStep('result')
+
+        const reader = analyseRes.body!.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const event = JSON.parse(line.slice(6))
+            if (event.type === 'progress') {
+              setProgressLabel(event.label)
+              setProgressPercent(event.percent)
+              setProgressSchrittIndex(event.schrittIndex)
+            } else if (event.type === 'done') {
+              setProgressPercent(100)
+              setProgressSchrittIndex(ANALYSE_SCHRITTE.length)
+              setAnalyseResult({ spielId: event.spielId, result: event.result })
+              setStep('result')
+            } else if (event.type === 'error') {
+              throw new Error(event.message)
+            }
+          }
+        }
       } catch (err) {
-        clearInterval(interval)
         setErrorMsg(err instanceof Error ? err.message : 'Unbekannter Fehler')
         setStep('error')
       }
@@ -245,29 +269,32 @@ export default function GameErstellenPage() {
               style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)' }}>
               🤖
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-base font-bold" style={{ color: '#1F1235' }}>KI analysiert dein Material</h2>
-              <p className="text-xs" style={{ color: '#7A6A94' }}>21 Schritte · ca. 60–90 Sekunden</p>
+              <p className="text-xs" style={{ color: '#7A6A94' }}>{progressLabel || 'Wird vorbereitet …'}</p>
             </div>
+            <span className="text-sm font-bold tabular-nums" style={{ color: '#7C3AED' }}>
+              {progressPercent}%
+            </span>
           </div>
 
           {/* Progress bar */}
-          <div className="rounded-full h-2 mb-6" style={{ background: '#E9D5FF' }}>
-            <div className="h-2 rounded-full transition-all duration-500"
-              style={{ width: `${(laufenderSchritt / ANALYSE_SCHRITTE.length) * 100}%`, background: 'linear-gradient(90deg, #7C3AED, #A855F7)' }} />
+          <div className="rounded-full h-3 mb-6" style={{ background: '#E9D5FF' }}>
+            <div className="h-3 rounded-full transition-all duration-700"
+              style={{ width: `${progressPercent}%`, background: 'linear-gradient(90deg, #7C3AED, #A855F7)' }} />
           </div>
 
           <div className="flex flex-col gap-1">
             {ANALYSE_SCHRITTE.map((s, i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
                 style={{
-                  background: i === laufenderSchritt ? '#F6F1FF' : 'transparent',
-                  color: i < laufenderSchritt ? '#059669' : i === laufenderSchritt ? '#7C3AED' : '#C4B5FD',
+                  background: i === progressSchrittIndex ? '#F6F1FF' : 'transparent',
+                  color: i < progressSchrittIndex ? '#059669' : i === progressSchrittIndex ? '#7C3AED' : '#C4B5FD',
                 }}>
                 <span className="w-5 text-center flex-shrink-0 text-xs">
-                  {i < laufenderSchritt ? '✓' : i === laufenderSchritt ? '⟳' : `${i + 1}`}
+                  {i < progressSchrittIndex ? '✓' : i === progressSchrittIndex ? '⟳' : `${i + 1}`}
                 </span>
-                <span className={i === laufenderSchritt ? 'font-semibold' : ''}>{s}</span>
+                <span className={i === progressSchrittIndex ? 'font-semibold' : ''}>{s}</span>
               </div>
             ))}
           </div>

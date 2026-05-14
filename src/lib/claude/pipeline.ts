@@ -189,6 +189,8 @@ export async function runDiagnosis(input: {
   )
 }
 
+export type ProgressEvent = { label: string; percent: number; schrittIndex: number }
+
 // --- Vollständige 21-Schritt-Pipeline ------------------------
 export async function runFullPipeline(input: {
   materialText: string
@@ -201,16 +203,26 @@ export async function runFullPipeline(input: {
     zeitrahmenMinuten: number
   }
   lernzielLehrkraft?: string
+  onProgress?: (e: ProgressEvent) => void
 }): Promise<{
   analyse: AnalyseOutput
   lernziel: LernzielOutput
   spiel: SpielOutput
   check: ValidationOutput
 }> {
+  const p = input.onProgress
+  p?.({ label: 'Material wird analysiert …', percent: 5, schrittIndex: 0 })
   const analyse = await analyzeMaterial(input)
+
+  p?.({ label: 'Lernziel wird bestimmt …', percent: 30, schrittIndex: 6 })
   const lernziel = await determineLearningObjective({ analyse, lernzielLehrkraft: input.lernzielLehrkraft })
+
+  p?.({ label: 'Spiel wird generiert …', percent: 55, schrittIndex: 10 })
   const spiel = await generateGame({ analyse, lernziel, kontext: input.kontext })
+
+  p?.({ label: 'Wird geprüft …', percent: 82, schrittIndex: 16 })
   const check = await validateAndCheck({ analyse, lernziel, spiel, abschnitte: input.abschnitte })
 
+  p?.({ label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 20 })
   return { analyse, lernziel, spiel, check }
 }

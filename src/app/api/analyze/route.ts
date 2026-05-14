@@ -3,90 +3,90 @@ import { runFullPipeline, PipelineValidationError, PipelineJsonError, PipelineAp
 import { createClient } from '@/lib/supabase/server'
 import type { AnalyseOutput, LernzielOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
 
+const enc = new TextEncoder()
+function sseEvent(data: Record<string, unknown>) {
+  return enc.encode(`data: ${JSON.stringify(data)}\n\n`)
+}
+
 export async function POST(request: NextRequest) {
-  console.log('[DEBUG] ANTHROPIC_API_KEY present:', !!process.env.ANTHROPIC_API_KEY, '| length:', process.env.ANTHROPIC_API_KEY?.length)
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
-    const body = await request.json()
-    const { materialId, lernzielLehrkraft, zeitrahmenMinuten = 15 } = body
+  const body = await request.json()
+  const { materialId, lernzielLehrkraft, zeitrahmenMinuten = 15 } = body
+  if (!materialId) return NextResponse.json({ error: 'materialId fehlt' }, { status: 400 })
 
-    if (!materialId) return NextResponse.json({ error: 'materialId fehlt' }, { status: 400 })
+  const { data: material, error: materialError } = await supabase
+    .from('materials')
+    .select('*')
+    .eq('id', materialId)
+    .eq('lehrer_id', user.id)
+    .single()
 
-    const { data: material, error: materialError } = await supabase
-      .from('materials')
-      .select('*')
-      .eq('id', materialId)
-      .eq('lehrer_id', user.id)
-      .single()
-
-    if (materialError || !material) {
-      return NextResponse.json({ error: 'Material nicht gefunden' }, { status: 404 })
-    }
-
-    const result = await runFullPipeline({
-      materialText: material.extrahierter_text,
-      abschnitte: material.abschnitte,
-      kontext: {
-        fach: material.fach,
-        jahrgangsstufe: material.jahrgangsstufe,
-        schulform: material.schulform,
-        bundesland: material.bundesland,
-        zeitrahmenMinuten,
-      },
-      lernzielLehrkraft,
-    })
-
-    // Analyse in DB speichern — alle Felder gemappt
-    const { data: analyse, error: analyseError } = await supabase
-      .from('analyses')
-      .insert(buildAnalyseRow(materialId, result.analyse, result.lernziel))
-      .select()
-      .single()
-
-    if (analyseError) throw analyseError
-
-    // Spiel in DB speichern
-    const { data: spiel, error: spielError } = await supabase
-      .from('games')
-      .insert(buildSpielRow(analyse.id, user.id, result.spiel))
-      .select()
-      .single()
-
-    if (spielError) throw spielError
-
-    // Lehrkraft-Check in DB speichern
-    const { error: checkError } = await supabase
-      .from('lehrkraft_checks')
-      .insert(buildCheckRow(spiel.id, result.check))
-
-    if (checkError) throw checkError
-
-    return NextResponse.json({ analyseId: analyse.id, spielId: spiel.id, result })
-  } catch (err) {
-    if (err instanceof PipelineValidationError) {
-      return NextResponse.json(
-        { error: `Validierungsfehler: ${err.message}`, schritt: err.schritt },
-        { status: 422 }
-      )
-    }
-    if (err instanceof PipelineJsonError) {
-      return NextResponse.json(
-        { error: `KI hat kein JSON zurückgegeben: ${err.schritt}` },
-        { status: 422 }
-      )
-    }
-    if (err instanceof PipelineApiError) {
-      return NextResponse.json(
-        { error: `KI-API nicht erreichbar: ${err.schritt}` },
-        { status: 503 }
-      )
-    }
-    console.error(err)
-    return NextResponse.json({ error: 'Analyse fehlgeschlagen' }, { status: 500 })
+  if (materialError || !material) {
+    return NextResponse.json({ error: 'Material nicht gefunden' }, { status: 404 })
   }
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (data: Record<string, unknown>) => controller.enqueue(sseEvent(data))
+
+      try {
+        const result = await runFullPipeline({
+          materialText: material.extrahierter_text,
+          abschnitte: material.abschnitte,
+          kontext: {
+            fach: material.fach,
+            jahrgangsstufe: material.jahrgangsstufe,
+            schulform: material.schulform,
+            bundesland: material.bundesland,
+            zeitrahmenMinuten,
+          },
+          lernzielLehrkraft,
+          onProgress: (e) => send({ type: 'progress', ...e }),
+        })
+
+        const { data: analyse, error: analyseError } = await supabase
+          .from('analyses')
+          .insert(buildAnalyseRow(materialId, result.analyse, result.lernziel))
+          .select()
+          .single()
+        if (analyseError) throw analyseError
+
+        const { data: spiel, error: spielError } = await supabase
+          .from('games')
+          .insert(buildSpielRow(analyse.id, user.id, result.spiel))
+          .select()
+          .single()
+        if (spielError) throw spielError
+
+        const { error: checkError } = await supabase
+          .from('lehrkraft_checks')
+          .insert(buildCheckRow(spiel.id, result.check))
+        if (checkError) throw checkError
+
+        send({ type: 'done', analyseId: analyse.id, spielId: spiel.id, result })
+      } catch (err) {
+        let message = 'Analyse fehlgeschlagen'
+        if (err instanceof PipelineValidationError) message = `Validierungsfehler: ${err.message}`
+        else if (err instanceof PipelineJsonError) message = `KI hat kein JSON zurückgegeben: ${err.schritt}`
+        else if (err instanceof PipelineApiError) message = `KI-API nicht erreichbar: ${err.schritt}`
+        else console.error(err)
+        send({ type: 'error', message })
+      }
+
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  })
 }
 
 function buildAnalyseRow(
