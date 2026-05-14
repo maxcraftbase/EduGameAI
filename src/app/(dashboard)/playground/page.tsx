@@ -79,13 +79,14 @@ export default function GameErstellenPage() {
     const lernziel = (form.elements.namedItem('lernziel') as HTMLInputElement).value
     const zeitrahmen = parseInt((form.elements.namedItem('zeitrahmen') as HTMLInputElement).value) || 15
 
-    startTransition(async () => {
-      setStep('analysing')
-      setErrorMsg(null)
-      setProgressPercent(0)
-      setProgressLabel('Upload läuft …')
-      setProgressSchrittIndex(0)
+    // Sofort rendern — außerhalb der Transition
+    setStep('analysing')
+    setErrorMsg(null)
+    setProgressPercent(0)
+    setProgressLabel('Upload läuft …')
+    setProgressSchrittIndex(0)
 
+    startTransition(async () => {
       try {
         const formData = new FormData()
         formData.append('file', file!)
