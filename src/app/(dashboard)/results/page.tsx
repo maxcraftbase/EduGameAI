@@ -44,9 +44,19 @@ export default function ResultsPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    createClient().from('games').select('id, titel, status, erstellt_am')
-      .eq('status', 'freigegeben').order('erstellt_am', { ascending: false })
-      .then(({ data }) => setSpiele(data ?? []))
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('games')
+        .select('id, titel, status, erstellt_am')
+        .eq('lehrer_id', user.id)
+        .eq('status', 'freigegeben')
+        .order('erstellt_am', { ascending: false })
+      setSpiele(data ?? [])
+    }
+    load()
   }, [])
 
   function onDiagnose(spielId: string) {

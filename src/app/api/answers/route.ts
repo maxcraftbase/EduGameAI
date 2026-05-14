@@ -31,9 +31,13 @@ export async function POST(request: NextRequest) {
 
     const { data: spiel } = await supabase
       .from('games')
-      .select('aufgaben')
+      .select('aufgaben, status')
       .eq('id', session.spiel_id)
       .single()
+
+    if (!spiel || spiel.status !== 'freigegeben') {
+      return NextResponse.json({ error: 'Spiel nicht verfügbar' }, { status: 403 })
+    }
 
     // Aufgabe aus dem Spiel suchen
     const aufgaben = (spiel?.aufgaben ?? []) as Array<{

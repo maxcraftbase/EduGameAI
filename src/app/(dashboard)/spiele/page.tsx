@@ -32,14 +32,19 @@ export default function SpielePage() {
   const [filter, setFilter] = useState<'alle' | 'freigegeben' | 'entwurf'>('alle')
 
   useEffect(() => {
-    createClient()
-      .from('games')
-      .select('id, titel, game_skin, spieltyp_didaktisch, status, erstellt_am')
-      .order('erstellt_am', { ascending: false })
-      .then(({ data }) => {
-        setSpiele(data ?? [])
-        setLoading(false)
-      })
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+      const { data } = await supabase
+        .from('games')
+        .select('id, titel, game_skin, spieltyp_didaktisch, status, erstellt_am')
+        .eq('lehrer_id', user.id)
+        .order('erstellt_am', { ascending: false })
+      setSpiele(data ?? [])
+      setLoading(false)
+    }
+    load()
   }, [])
 
   const filtered = filter === 'alle' ? spiele : spiele.filter((s) => s.status === filter)

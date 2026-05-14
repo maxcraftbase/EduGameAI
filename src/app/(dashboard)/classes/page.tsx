@@ -97,8 +97,18 @@ export default function ClassesPage() {
 
   // ── Klassen laden ────────────────────────────────────────────────────────
   useEffect(() => {
-    createClient().from('classes').select('*').order('erstellt_am', { ascending: false })
-      .then(({ data }) => setKlassen(data ?? []))
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('lehrer_id', user.id)
+        .order('erstellt_am', { ascending: false })
+      setKlassen(data ?? [])
+    }
+    load()
   }, [])
 
   // ── Codes laden ──────────────────────────────────────────────────────────
@@ -123,8 +133,18 @@ export default function ClassesPage() {
 
   // ── Verfügbare Spiele für Zuweisung ──────────────────────────────────────
   const loadAvailableGames = useCallback(async (classId: string) => {
-    const { data: all } = await createClient().from('games').select('id, titel, status').order('erstellt_am', { ascending: false })
-    const { data: assigned } = await createClient().from('class_games').select('game_id').eq('class_id', classId)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: all } = await supabase
+      .from('games')
+      .select('id, titel, status')
+      .eq('lehrer_id', user.id)
+      .order('erstellt_am', { ascending: false })
+    const { data: assigned } = await supabase
+      .from('class_games')
+      .select('game_id')
+      .eq('class_id', classId)
     const assignedIds = new Set((assigned ?? []).map((r) => r.game_id))
     setAvailableGames((all ?? []).filter((g) => !assignedIds.has(g.id)))
   }, [])
