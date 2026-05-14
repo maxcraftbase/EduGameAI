@@ -16,6 +16,7 @@ Spielvorlagen und wählst situationsgerecht aus. Fachliche Korrektheit und Auswe
 {
   "analyse": "<vollständiges JSON-Objekt aus Prompt 01>",
   "lernziel": "<vollständiges JSON-Objekt aus Prompt 02>",
+  "lernpfad": "<vollständiges JSON-Objekt aus Prompt 03 Lernpfad>",
   "kontext": {
     "fach": "<z.B. Biologie>",
     "jahrgangsstufe": "<z.B. 9>",
@@ -25,6 +26,10 @@ Spielvorlagen und wählst situationsgerecht aus. Fachliche Korrektheit und Auswe
   }
 }
 ```
+
+**Nutze `lernpfad.lernpfad_typ` und `lernpfad.empfohlene_spielfunktion` als primären Auswahlfilter:**
+Der Lernpfad-Typ bestimmt, aus welchem Phasen-Pool (Kennenlernen / Vertiefen / Prüfen) du auswählst.
+Überschreibe die Spielfunktion aus Prompt 02 durch `lernpfad.empfohlene_spielfunktion`, wenn diese präziser ist.
 
 ---
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runFullPipeline, PipelineValidationError, PipelineJsonError, PipelineApiError } from '@/lib/claude/pipeline'
 import { createClient } from '@/lib/supabase/server'
-import type { AnalyseOutput, LernzielOutput, SpielmappingOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
+import type { AnalyseOutput, LernzielOutput, LernpfadOutput, SpielmappingOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
 
 const enc = new TextEncoder()
 function sseEvent(data: Record<string, unknown>) {
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
         const { data: analyse, error: analyseError } = await supabase
           .from('analyses')
-          .insert(buildAnalyseRow(materialId, result.analyse, result.lernziel, result.spielmapping))
+          .insert(buildAnalyseRow(materialId, result.analyse, result.lernziel, result.lernpfad, result.spielmapping))
           .select()
           .single()
         if (analyseError) throw analyseError
@@ -97,6 +97,7 @@ function buildAnalyseRow(
   materialId: string,
   a: AnalyseOutput,
   l: LernzielOutput,
+  lp: LernpfadOutput,
   sm: SpielmappingOutput
 ) {
   return {
@@ -119,6 +120,7 @@ function buildAnalyseRow(
     antwortformat_sekundaer: l.schritt_10_antwortformat['sekundäres_format'],
     spielfunktion: l.schritt_9_ampel.spielfunktion,
     abdeckung: l.schritt_9_ampel.abdeckung,
+    lernpfad: lp,
     spielmapping: sm,
   }
 }

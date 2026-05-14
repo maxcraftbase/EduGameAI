@@ -1,4 +1,4 @@
-# Prompt 04 — Validierung, Sourcemapping & Lehrkraft-Check (Schritte 17–21)
+# Prompt 05 — Validierung, Sourcemapping & Lehrkraft-Check (Schritte 17–21)
 
 ## Zweck
 Dieser Prompt ist der letzte Schritt vor der Freigabe eines Spiels.
@@ -19,7 +19,9 @@ Transparenz ist wichtiger als positive Bewertung.
 {
   "analyse": "<vollständiges JSON aus Prompt 01>",
   "lernziel": "<vollständiges JSON aus Prompt 02>",
-  "spiel": "<vollständiges JSON aus Prompt 03>",
+  "lernpfad": "<vollständiges JSON aus Prompt 03>",
+  "spielmapping": "<vollständiges JSON aus Prompt 04>",
+  "spiel": "<vollständiges JSON aus Prompt 04 Spielgenerierung>",
   "originalmaterial_abschnitte": [
     { "id": "A1", "text": "<Abschnitt 1>" }
   ]
@@ -100,6 +102,8 @@ Er muss klar, ehrlich und direkt nutzbar sein.
 10. Fachliche Reduktion: markiert und zulässig?
 11. Altersangemessenheit
 12. Sourcemapping vollständig
+13. Lernpfad-Passung: Passt die gewählte Game-Engine und Spielmechanik zum bestimmten Lernpfad-Typ? (z.B. POE → Hypothesenbildung erkennbar; Verfahren_Anwendung → Schritt-für-Schritt-Struktur sichtbar)
+14. Lerninhalt-Spielerlebnis-Balance: Wird die empfohlene Balance (aus Lernpfad, z.B. 70/30) eingehalten? Ist der Spielanteil nicht zu dominant auf Kosten des Fachinhalts?
 
 **Ampellogik für den Gesamtstatus:**
 - 🟢 Grün: Lernziel vollständig im MVP abgebildet, Auswertung regelbasiert möglich
@@ -179,7 +183,9 @@ Er muss klar, ehrlich und direkt nutzbar sein.
       "feedbackqualitaet": "ok | warnung | problem",
       "reduktion_markiert": "ok | warnung | problem",
       "altersangemessen": "ok | warnung | problem",
-      "sourcemapping_vollstaendig": "ok | warnung | problem"
+      "sourcemapping_vollstaendig": "ok | warnung | problem",
+      "lernpfad_passung": "ok | warnung | problem",
+      "lerninhalt_spielerlebnis_balance": "ok | warnung | problem"
     },
     "lernzielanteile": {
       "vollstaendig_abgedeckt": ["<Anteil 1>"],

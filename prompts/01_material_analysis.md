@@ -118,6 +118,8 @@ Differenzierungsrahmen pro Stufe:
 - Wenn eine Kategorie nicht eindeutig bestimmbar ist, gib "unklar" an und erkläre es im Feld `anmerkungen`.
 - Erfinde keine Inhalte, die nicht im Material vorhanden sind.
 - Alle Quellreferenzen müssen auf existierende Abschnitts-IDs aus dem Input verweisen.
+- Erstelle **keine Aufgaben, Fragen oder Übungen** aus dem Material — das ist Aufgabe späterer Pipeline-Schritte.
+- Kernaussagen (Schritt 2) müssen direkt aus dem Material belegbar sein. Keine Ergänzungen oder Interpretationen.
 
 ---
 

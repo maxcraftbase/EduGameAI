@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   text: string
@@ -37,7 +38,6 @@ export function Reihenfolge({ text, richtigeReihenfolge, hilfen, feedback, onAnt
     } else if (selected === i) {
       setSelected(null)
     } else {
-      // Tausche selected ↔ i
       setItems((prev) => {
         const next = [...prev]
         ;[next[selected], next[i]] = [next[i], next[selected]]
@@ -54,11 +54,85 @@ export function Reihenfolge({ text, richtigeReihenfolge, hilfen, feedback, onAnt
     setTimeout(() => onAntwort(items, isKorrekt), 1200)
   }
 
+  const phase = selected === null ? 'idle' : 'selected'
+
   return (
     <div className="flex flex-col gap-5">
       <p className="text-sm font-medium leading-relaxed">{text}</p>
 
-      {hilfen.length > 0 && (
+      {/* Dynamische Anweisung */}
+      <div className={cn(
+        'text-xs px-3 py-2 rounded-lg text-center font-medium transition-all duration-200',
+        phase === 'idle'
+          ? 'bg-muted/60 text-muted-foreground'
+          : 'bg-violet-100 text-violet-700 border border-violet-200'
+      )}>
+        {phase === 'idle'
+          ? '① Element antippen zum Auswählen'
+          : '② Zielposition antippen zum Verschieben'}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {items.map((item, i) => {
+          const isSelected = selected === i
+          const isTarget = selected !== null && selected !== i
+          const isCorrectPos = submitted && item === richtigeReihenfolge[i]
+          const isWrongPos = submitted && item !== richtigeReihenfolge[i]
+
+          return (
+            <button
+              key={item + i}
+              onClick={() => handleSelect(i)}
+              disabled={submitted}
+              className={cn(
+                'flex items-center gap-3 px-4 py-3 rounded-xl border text-sm text-left transition-all duration-150',
+                !submitted && !isSelected && !isTarget && 'border-border bg-white hover:border-violet-300 hover:bg-violet-50/50',
+                !submitted && isSelected && 'border-violet-500 bg-violet-50 ring-2 ring-violet-300 shadow-sm scale-[1.01]',
+                !submitted && isTarget && 'border-dashed border-violet-400 bg-violet-50/30 hover:bg-violet-100/50',
+                submitted && isCorrectPos && 'border-green-400 bg-green-50',
+                submitted && isWrongPos && 'border-red-300 bg-red-50',
+              )}
+            >
+              <span className={cn(
+                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors',
+                !submitted && isSelected && 'bg-violet-500 text-white',
+                !submitted && isTarget && 'bg-violet-200 text-violet-700',
+                !submitted && !isSelected && !isTarget && 'bg-gray-100 text-gray-500',
+                submitted && isCorrectPos && 'bg-green-500 text-white',
+                submitted && isWrongPos && 'bg-red-400 text-white',
+              )}>
+                {submitted ? (isCorrectPos ? '✓' : '✗') : i + 1}
+              </span>
+              <span className={cn(
+                isSelected && 'font-medium text-violet-900',
+                submitted && isCorrectPos && 'text-green-800',
+                submitted && isWrongPos && 'text-red-700',
+              )}>
+                {item}
+              </span>
+              {isSelected && (
+                <span className="ml-auto text-violet-400 text-xs">ausgewählt ↕</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {submitted && (
+        <div className={cn(
+          'rounded-xl px-4 py-3 text-sm font-medium',
+          korrekt ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'
+        )}>
+          {korrekt ? feedback.bei_korrekt : feedback.bei_falsch}
+          {!korrekt && (
+            <div className="mt-2 text-xs opacity-80 font-normal">
+              Richtig: {richtigeReihenfolge.join(' → ')}
+            </div>
+          )}
+        </div>
+      )}
+
+      {hilfen.length > 0 && !submitted && (
         <div className="flex gap-2 items-center">
           <button
             onClick={() => setHilfeIndex((i) => (i === null ? 0 : Math.min(i + 1, hilfen.length - 1)))}
@@ -73,53 +147,6 @@ export function Reihenfolge({ text, richtigeReihenfolge, hilfen, feedback, onAnt
             </span>
           )}
         </div>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {items.map((item, i) => {
-          const isSelected = selected === i
-          const isCorrectPos = submitted && item === richtigeReihenfolge[i]
-          const isWrongPos = submitted && item !== richtigeReihenfolge[i]
-          return (
-            <button
-              key={i}
-              onClick={() => handleSelect(i)}
-              disabled={submitted}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm text-left transition-all
-                ${isSelected ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-300'
-                  : isCorrectPos ? 'border-green-400 bg-green-50'
-                  : isWrongPos ? 'border-red-300 bg-red-50'
-                  : 'border-gray-200 bg-white hover:border-violet-300 hover:bg-violet-50/40'}`}
-            >
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                ${isCorrectPos ? 'bg-green-500 text-white'
-                  : isWrongPos ? 'bg-red-400 text-white'
-                  : isSelected ? 'bg-violet-500 text-white'
-                  : 'bg-gray-100 text-gray-500'}`}>
-                {submitted ? (isCorrectPos ? '✓' : '✗') : i + 1}
-              </span>
-              <span className={isCorrectPos ? 'text-green-800' : isWrongPos ? 'text-red-700' : ''}>{item}</span>
-            </button>
-          )
-        })}
-      </div>
-
-      {submitted && (
-        <div className={`text-sm px-4 py-3 rounded-xl font-medium
-          ${korrekt ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-          {korrekt ? feedback.bei_korrekt : feedback.bei_falsch}
-          {!korrekt && (
-            <div className="mt-2 text-xs opacity-80">
-              Richtige Reihenfolge: {richtigeReihenfolge.join(' → ')}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!submitted && (
-        <p className="text-xs text-gray-400 text-center">
-          Tippe auf zwei Elemente um sie zu tauschen
-        </p>
       )}
 
       {!submitted && (

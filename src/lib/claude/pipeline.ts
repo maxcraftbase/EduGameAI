@@ -5,12 +5,14 @@ import { ZodSchema, ZodError } from 'zod'
 import {
   AnalyseOutputSchema,
   LernzielOutputSchema,
+  LernpfadOutputSchema,
   SpielmappingOutputSchema,
   SpielOutputSchema,
   ValidationOutputSchema,
   DiagnoseOutputSchema,
   type AnalyseOutput,
   type LernzielOutput,
+  type LernpfadOutput,
   type SpielmappingOutput,
   type SpielOutput,
   type ValidationOutput,
@@ -129,10 +131,29 @@ export async function determineLearningObjective(input: {
   )
 }
 
+// --- Schritt 12–13: Didaktischer Lernpfad -------------------
+export async function determineLernpfad(input: {
+  analyse: AnalyseOutput
+  lernziel: LernzielOutput
+  kontext: { fach: string; jahrgangsstufe: string; schulform: string; bundesland: string }
+}): Promise<LernpfadOutput> {
+  return callClaude(
+    'Lernpfad (Schritte 12–13)',
+    loadPrompt('03_lernpfad.md'),
+    JSON.stringify({
+      analyse: input.analyse,
+      lernziel: input.lernziel,
+      kontext: input.kontext,
+    }),
+    LernpfadOutputSchema
+  )
+}
+
 // --- Spielmapping: 5 Spielvorschläge -------------------------
 export async function runSpielMapping(input: {
   analyse: AnalyseOutput
   lernziel: LernzielOutput
+  lernpfad: LernpfadOutput
   kontext: { fach: string; jahrgangsstufe: string; schulform: string; bundesland: string; zeitrahmenMinuten: number }
 }): Promise<SpielmappingOutput> {
   return callClaude(
@@ -141,6 +162,7 @@ export async function runSpielMapping(input: {
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
+      lernpfad: input.lernpfad,
       kontext: {
         fach: input.kontext.fach,
         jahrgangsstufe: input.kontext.jahrgangsstufe,
@@ -157,6 +179,7 @@ export async function runSpielMapping(input: {
 export async function generateGame(input: {
   analyse: AnalyseOutput
   lernziel: LernzielOutput
+  lernpfad: LernpfadOutput
   spielmapping: SpielmappingOutput
   kontext: { jahrgangsstufe: string; fach: string; zeitrahmenMinuten: number }
 }): Promise<SpielOutput> {
@@ -166,6 +189,7 @@ export async function generateGame(input: {
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
+      lernpfad: input.lernpfad,
       spielmapping: input.spielmapping,
       kontext: {
         jahrgangsstufe: input.kontext.jahrgangsstufe,
@@ -181,6 +205,8 @@ export async function generateGame(input: {
 export async function validateAndCheck(input: {
   analyse: AnalyseOutput
   lernziel: LernzielOutput
+  lernpfad: LernpfadOutput
+  spielmapping: SpielmappingOutput
   spiel: SpielOutput
   abschnitte: { id: string; text: string }[]
 }): Promise<ValidationOutput> {
@@ -190,6 +216,8 @@ export async function validateAndCheck(input: {
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
+      lernpfad: input.lernpfad,
+      spielmapping: input.spielmapping,
       spiel: input.spiel,
       originalmaterial_abschnitte: input.abschnitte,
     }),
@@ -219,7 +247,7 @@ export async function runDiagnosis(input: {
 
 export type ProgressEvent = { label: string; percent: number; schrittIndex: number }
 
-// --- Vollständige Pipeline (mit Spielmapping) ----------------
+// --- Vollständige Pipeline (mit Lernpfad + Spielmapping) -----
 export async function runFullPipeline(input: {
   materialText: string
   abschnitte: { id: string; text: string }[]
@@ -235,6 +263,7 @@ export async function runFullPipeline(input: {
 }): Promise<{
   analyse: AnalyseOutput
   lernziel: LernzielOutput
+  lernpfad: LernpfadOutput
   spielmapping: SpielmappingOutput
   spiel: SpielOutput
   check: ValidationOutput
@@ -246,15 +275,18 @@ export async function runFullPipeline(input: {
   p?.({ label: 'Lernziel wird bestimmt …', percent: 25, schrittIndex: 6 })
   const lernziel = await determineLearningObjective({ analyse, lernzielLehrkraft: input.lernzielLehrkraft })
 
-  p?.({ label: 'Spielmapping wird erstellt …', percent: 48, schrittIndex: 10 })
-  const spielmapping = await runSpielMapping({ analyse, lernziel, kontext: input.kontext })
+  p?.({ label: 'Lernpfad wird bestimmt …', percent: 38, schrittIndex: 11 })
+  const lernpfad = await determineLernpfad({ analyse, lernziel, kontext: input.kontext })
 
-  p?.({ label: 'Spiel wird generiert …', percent: 68, schrittIndex: 13 })
-  const spiel = await generateGame({ analyse, lernziel, spielmapping, kontext: input.kontext })
+  p?.({ label: 'Spielmapping wird erstellt …', percent: 55, schrittIndex: 12 })
+  const spielmapping = await runSpielMapping({ analyse, lernziel, lernpfad, kontext: input.kontext })
 
-  p?.({ label: 'Wird geprüft …', percent: 87, schrittIndex: 17 })
-  const check = await validateAndCheck({ analyse, lernziel, spiel, abschnitte: input.abschnitte })
+  p?.({ label: 'Spiel wird generiert …', percent: 72, schrittIndex: 14 })
+  const spiel = await generateGame({ analyse, lernziel, lernpfad, spielmapping, kontext: input.kontext })
+
+  p?.({ label: 'Wird geprüft …', percent: 88, schrittIndex: 17 })
+  const check = await validateAndCheck({ analyse, lernziel, lernpfad, spielmapping, spiel, abschnitte: input.abschnitte })
 
   p?.({ label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 21 })
-  return { analyse, lernziel, spielmapping, spiel, check }
+  return { analyse, lernziel, lernpfad, spielmapping, spiel, check }
 }

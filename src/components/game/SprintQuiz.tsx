@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 
 interface Option {
@@ -23,22 +23,28 @@ export function SprintQuiz({ text, optionen, zeitSekunden = DEFAULT_ZEIT, onAntw
   const [verbleibend, setVerbleibend] = useState(zeitSekunden)
   const [zeitAbgelaufen, setZeitAbgelaufen] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const onAntwortRef = useRef(onAntwort)
+  useEffect(() => { onAntwortRef.current = onAntwort }, [onAntwort])
+
+  const handleTimeout = useCallback(() => {
+    setZeitAbgelaufen(true)
+    setSubmitted(true)
+    setTimeout(() => onAntwortRef.current([], false), 400)
+  }, [])
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setVerbleibend((v) => {
         if (v <= 1) {
           clearInterval(intervalRef.current!)
-          setZeitAbgelaufen(true)
-          setSubmitted(true)
-          setTimeout(() => onAntwort([], false), 400)
+          handleTimeout()
           return 0
         }
         return v - 1
       })
     }, 1000)
     return () => clearInterval(intervalRef.current!)
-  }, [onAntwort])
+  }, [handleTimeout])
 
   function waehle(i: number) {
     if (submitted) return

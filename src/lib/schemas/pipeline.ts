@@ -171,7 +171,32 @@ export const LernzielOutputSchema = z.object({
 
 export type LernzielOutput = z.infer<typeof LernzielOutputSchema>
 
-// --- Schema 3: Spielmapping (Prompt 03) ----------------------
+// --- Schema 3: Lernpfad (Prompt 03) --------------------------
+
+const LernpfadTypSchema = z.enum([
+  'POE',
+  'Prozess',
+  'Sprachaufbau',
+  'Vokabel',
+  'Kriterien_Urteil',
+  'Text_Deutung',
+  'Verfahren_Anwendung',
+])
+
+export const LernpfadOutputSchema = z.object({
+  lernpfad_typ: LernpfadTypSchema,
+  lernpfad_beschreibung: z.string().min(1),
+  empfohlene_phasen: z.array(z.enum(['kennenlernen', 'vertiefen', 'pruefen'])).min(1),
+  empfohlene_spielfunktion: SpielreihefunktionSchema,
+  lerninhalt_anteil: z.number().min(50).max(90),
+  spielerlebnis_anteil: z.number().min(10).max(50),
+  begruendung: z.string().min(1),
+  besonderheiten: z.string().optional(),
+})
+
+export type LernpfadOutput = z.infer<typeof LernpfadOutputSchema>
+
+// --- Schema 5: Spielmapping (Prompt 04) ----------------------
 
 const SpielvorschlagTypSchema = z.enum([
   'beste_didaktische_passung',
@@ -299,6 +324,8 @@ export const ValidationOutputSchema = z.object({
       reduktion_markiert: CheckDimensionSchema,
       altersangemessen: CheckDimensionSchema,
       sourcemapping_vollstaendig: CheckDimensionSchema,
+      lernpfad_passung: CheckDimensionSchema,
+      lerninhalt_spielerlebnis_balance: CheckDimensionSchema,
     }),
     lernzielanteile: z.object({
       vollstaendig_abgedeckt: z.array(z.string()),

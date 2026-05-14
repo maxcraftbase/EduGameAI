@@ -16,7 +16,8 @@ und auf die Wissensstruktur aus der Materialanalyse abgestimmt.
 {
   "analyse": "<vollständiges JSON aus Prompt 01>",
   "lernziel": "<vollständiges JSON aus Prompt 02>",
-  "spielmapping": "<vollständiges JSON aus Prompt 03>",
+  "lernpfad": "<vollständiges JSON aus Prompt 03 Lernpfad>",
+  "spielmapping": "<vollständiges JSON aus Prompt 04 Spielmapping>",
   "kontext": {
     "jahrgangsstufe": "<z.B. 8>",
     "fach": "<z.B. Biologie>",
