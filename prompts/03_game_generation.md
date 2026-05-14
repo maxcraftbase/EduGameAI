@@ -80,7 +80,7 @@ Jede Aufgabe muss:
 - eine eindeutige Lösung haben (bei MVP-Formaten)
 - für das gewählte Spielformat funktionieren
 
-Anzahl: 5–12 Aufgaben je nach Zeitrahmen (Richtwert: 1–2 Aufgaben pro Minute).
+Anzahl: exakt 4–5 Aufgaben. Nicht mehr. Qualität vor Quantität.
 
 Pro Aufgabe:
 - Aufgabentext
