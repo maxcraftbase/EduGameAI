@@ -83,6 +83,7 @@ function PlayInner({ gameId }: { gameId: string }) {
           aufgaben={sessionData.aufgaben as Parameters<typeof GameEngine>[0]['aufgaben']}
           niveau={niveau}
           gameSkin={sessionData.gameSkin}
+          gameId={gameId}
         />
       </div>
     )

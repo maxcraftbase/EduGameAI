@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { MultipleChoice } from './MultipleChoice'
 import { Zuordnung } from './Zuordnung'
 import { Reihenfolge } from './Reihenfolge'
@@ -25,6 +25,7 @@ interface Props {
   aufgaben: Aufgabe[]
   niveau: string
   gameSkin: string
+  gameId: string
 }
 
 interface AufgabenErgebnis {
@@ -82,11 +83,13 @@ const SKIN_LABEL: Record<string, string> = {
   'Arena': '🏆 Gauntlet',
 }
 
-export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
+export function GameEngine({ sessionId, aufgaben, gameSkin, gameId }: Props) {
   const [current, setCurrent] = useState(0)
   const [ergebnisse, setErgebnisse] = useState<AufgabenErgebnis[]>([])
   const [abgeschlossen, setAbgeschlossen] = useState(false)
   const [bereit, setBereit] = useState(false)
+  const [pdfLaden, setPdfLaden] = useState(false)
+  const pdfAusgeloest = useRef(false)
 
   const aufgabe = aufgaben[current]
   const fortschritt = Math.round((current / aufgaben.length) * 100)
@@ -104,6 +107,23 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
 
     setBereit(true)
   }, [aufgabe, sessionId])
+
+  async function downloadLernzettel() {
+    if (pdfAusgeloest.current) return
+    pdfAusgeloest.current = true
+    setPdfLaden(true)
+    try {
+      const res = await fetch(`/api/games/${gameId}/lernzettel`)
+      if (!res.ok) throw new Error('Daten nicht verfügbar')
+      const data = await res.json()
+      const { generateLernzettelPDF } = await import('@/lib/pdf/lernzettel')
+      await generateLernzettelPDF(data)
+    } catch {
+      pdfAusgeloest.current = false
+    } finally {
+      setPdfLaden(false)
+    }
+  }
 
   function weiter() {
     setBereit(false)
@@ -136,6 +156,19 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
             </div>
           ))}
         </div>
+
+        <button
+          onClick={downloadLernzettel}
+          disabled={pdfLaden}
+          className="w-full max-w-md py-3.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+          style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)' }}
+        >
+          {pdfLaden ? (
+            <>⟳ Lernzettel wird erstellt …</>
+          ) : (
+            <>📄 Lernzettel herunterladen</>
+          )}
+        </button>
       </div>
     )
   }
