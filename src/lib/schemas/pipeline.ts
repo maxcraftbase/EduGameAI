@@ -67,6 +67,8 @@ const AntwortformatSchema = z.enum([
   'multiple_choice',
   'zuordnung',
   'reihenfolge',
+  'hangman',
+  'space_invaders',
 ])
 
 const AmpelSchema = z.enum(['gruen', 'gelb', 'rot'])
