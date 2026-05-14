@@ -72,6 +72,7 @@ export default function GameErstellenPage() {
   function onSubmitMetadata(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
+    const spielname = (form.elements.namedItem('spielname') as HTMLInputElement).value
     const fach = (form.elements.namedItem('fach') as HTMLSelectElement).value
     const jahrgangsstufe = (form.elements.namedItem('jahrgangsstufe') as HTMLSelectElement).value
     const schulform = (form.elements.namedItem('schulform') as HTMLSelectElement).value
@@ -105,7 +106,7 @@ export default function GameErstellenPage() {
         const analyseRes = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ materialId: material.id, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen }),
+          body: JSON.stringify({ materialId: material.id, spielname: spielname || undefined, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen }),
         })
         if (!analyseRes.ok) {
           const body = await analyseRes.json().catch(() => ({}))
@@ -209,6 +210,12 @@ export default function GameErstellenPage() {
           </div>
 
           <form onSubmit={onSubmitMetadata} className="flex flex-col gap-4">
+            <div>
+              <label style={labelStyle}>Spielname</label>
+              <input name="spielname" type="text" required placeholder="z.B. Fotosynthese – Klasse 9a" style={inputStyle} />
+              <p className="text-xs mt-1.5" style={{ color: '#7A6A94' }}>So findest du das Spiel später in deiner Übersicht.</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label style={labelStyle}>Fach</label>

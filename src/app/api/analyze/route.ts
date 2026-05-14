@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
   const body = await request.json()
-  const { materialId, lernzielLehrkraft, zeitrahmenMinuten = 15 } = body
+  const { materialId, spielname, lernzielLehrkraft, zeitrahmenMinuten = 15 } = body
   if (!materialId) return NextResponse.json({ error: 'materialId fehlt' }, { status: 400 })
 
   const { data: material, error: materialError } = await supabase
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
         const { data: spiel, error: spielError } = await supabase
           .from('games')
-          .insert(buildSpielRow(analyse.id, user.id, result.spiel, result.spielmapping))
+          .insert(buildSpielRow(analyse.id, user.id, result.spiel, result.spielmapping, spielname))
           .select()
           .single()
         if (spielError) throw spielError
@@ -125,7 +125,7 @@ function buildAnalyseRow(
   }
 }
 
-function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput, sm: SpielmappingOutput) {
+function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput, sm: SpielmappingOutput, spielname?: string) {
   const selectedVorschlag = sm.vorschlaege.find(v => v.rang === sm.ausgewaehlter_vorschlag_rang)
   const aufgaben = s.schritt_14_aufgaben.map((q) => ({
     aufgabe_id: q.aufgabe_id,
@@ -142,7 +142,7 @@ function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput, sm: 
   return {
     analyse_id: analyseId,
     lehrer_id: lehrerId,
-    titel: selectedVorschlag ? `${selectedVorschlag.name} – ${new Date().toLocaleDateString('de-DE')}` : `Spiel – ${new Date().toLocaleDateString('de-DE')}`,
+    titel: spielname?.trim() || (selectedVorschlag ? `${selectedVorschlag.name} – ${new Date().toLocaleDateString('de-DE')}` : `Spiel – ${new Date().toLocaleDateString('de-DE')}`),
     spieltyp_didaktisch: s.schritt_13_spieltyp_didaktisch,
     game_engine: s.schritt_11_game_engine.engine_typ,
     game_skin: s.schritt_12_game_skin.altersstufe,
