@@ -36,6 +36,8 @@ Wähle **eines** der folgenden Templates basierend auf dem `primäres_format` au
 | Multiple Choice | `multiple_choice` | Mehrere richtige Antworten aus 5–6 Optionen |
 | Zuordnung | `zuordnung` | Begriffe ihren Definitionen/Kategorien zuordnen |
 | Reihenfolge | `reihenfolge` | Schritte, Prozesse, Ereignisse sortieren |
+| Hangman | `hangman` | Fachbegriff erraten (Wissen abrufen, Begriffe) |
+| Space Invaders | `space_invaders` | Richtige Antworten abschießen (motivierend, Faktenwissen) |
 
 Falls das `primäres_format` aus Schritt 10 nicht in dieser Liste ist, wähle das am besten passende Template.
 
@@ -70,6 +72,18 @@ Erstelle exakt **4 Aufgaben**. Nicht mehr, nicht weniger.
 - `loesungen`: die Elemente in der **richtigen** Reihenfolge (mind. 3, max. 6 Elemente)
 - `distraktoren`: `[]` (nicht nötig)
 - `hilfen`: 1–2 kurze Hinweise (optional)
+
+**Für `hangman`:**
+- `text`: Hinweisfrage oder Kontext (z.B. "Welcher Begriff beschreibt die Energiegewinnung in der Zelle?")
+- `loesungen`: genau 1 Wort/Begriff (das zu erratende Wort, z.B. "Zellatmung")
+- `distraktoren`: `[]` (nicht nötig)
+- `hilfen`: 1–2 Hinweise die nach Fehlversuchen erscheinen
+
+**Für `space_invaders`:**
+- `text`: Frage die oben im Spiel angezeigt wird (z.B. "Welche Aussagen zur Fotosynthese sind richtig?")
+- `loesungen`: 1–3 richtige Antworten (grüne Invader, abschießen = Punkt)
+- `distraktoren`: 3–5 falsche Antworten (rote Invader, abschießen = Treffer verloren)
+- `hilfen`: `[]` (nicht nötig)
 
 ### Qualitätsregeln:
 - Alle Inhalte müssen im Originalmaterial belegt sein
