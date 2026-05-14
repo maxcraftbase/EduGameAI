@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Dashboard-Routen erfordern Login
-  const protectedPaths = ['/playground', '/modules', '/classes', '/results']
+  const protectedPaths = ['/dashboard', '/playground', '/modules', '/classes', '/results', '/spiele', '/einstellungen']
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p))
 
   if (isProtected && !user) {
@@ -37,7 +37,7 @@ export async function proxy(request: NextRequest) {
 
   // Eingeloggte Nutzer von Login/Signup wegleiten
   if ((pathname === '/login' || pathname === '/signup') && user) {
-    return NextResponse.redirect(new URL('/playground', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return supabaseResponse

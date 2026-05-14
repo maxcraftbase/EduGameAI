@@ -7,27 +7,14 @@ import { LehrkraftCheckPanel } from '@/components/playground/LehrkraftCheckPanel
 type Step = 'upload' | 'metadata' | 'analysing' | 'result' | 'error'
 
 const ANALYSE_SCHRITTE = [
-  'Material analysieren',
-  'Kernaussagen extrahieren',
-  'Wissensform bestimmen',
-  'Lernform bestimmen',
-  'Wissensstruktur bestimmen',
-  'Komplexitätsstufe bestimmen',
-  'Lernziel formulieren',
-  'Spielbarkeit prüfen',
-  'Ampel-Entscheidung',
-  'Antwortformat bestimmen',
-  'Game-Engine wählen',
-  'Game-Skin wählen',
-  'Spieltyp benennen',
-  'Aufgaben generieren',
-  'Differenzierung erzeugen',
-  'Fehlvorstellungen einbauen',
-  'Feedbackbausteine erstellen',
-  'Fachliche Reduktion prüfen',
-  'Fachliche Korrektheit prüfen',
-  'Sourcemapping erstellen',
-  'Lehrkraft-Check ausgeben',
+  'Material analysieren', 'Kernaussagen extrahieren', 'Wissensform bestimmen',
+  'Lernform bestimmen', 'Wissensstruktur bestimmen', 'Komplexitätsstufe bestimmen',
+  'Lernziel formulieren', 'Spielbarkeit prüfen', 'Ampel-Entscheidung',
+  'Antwortformat bestimmen', 'Game-Engine wählen', 'Game-Skin wählen',
+  'Spieltyp benennen', 'Aufgaben generieren', 'Differenzierung erzeugen',
+  'Fehlvorstellungen einbauen', 'Feedbackbausteine erstellen',
+  'Fachliche Reduktion prüfen', 'Fachliche Korrektheit prüfen',
+  'Sourcemapping erstellen', 'Lehrkraft-Check ausgeben',
 ]
 
 const FAECHER = ['Biologie', 'Chemie', 'Physik', 'Mathematik', 'Deutsch', 'Geschichte',
@@ -35,32 +22,40 @@ const FAECHER = ['Biologie', 'Chemie', 'Physik', 'Mathematik', 'Deutsch', 'Gesch
 const STUFEN = Array.from({ length: 9 }, (_, i) => `${i + 5}`)
 const SCHULFORMEN = ['Gymnasium', 'Realschule', 'Gesamtschule', 'Berufsschule', 'Grundschule']
 const BUNDESLAENDER = ['NRW', 'Bayern', 'Berlin', 'Hamburg', 'Hessen', 'Baden-Württemberg',
-  'Sachsen', 'Niedersachsen', 'Brandenburg', 'Thüringen', 'Sachsen-Anhalt', 'Mecklenburg-Vorpommern',
-  'Rheinland-Pfalz', 'Saarland', 'Schleswig-Holstein', 'Bremen']
+  'Sachsen', 'Niedersachsen', 'Brandenburg', 'Thüringen', 'Sachsen-Anhalt',
+  'Mecklenburg-Vorpommern', 'Rheinland-Pfalz', 'Saarland', 'Schleswig-Holstein', 'Bremen']
 
 interface AnalyseResult {
   spielId: string
   result: {
-    lernziel: {
-      schritt_7_lernziel: { original: string }
-      schritt_9_ampel: { farbe: string; lernziel_mvp_variante: string | null }
-    }
-    check: {
-      schritt_21_lehrkraft_check: {
-        gesamtampel: 'gruen' | 'gelb' | 'rot'
-        lernziel_original: string
-        lernziel_mvp_variante: string | null
-        dimensionen: Record<string, unknown>
-        lernzielanteile: { vollstaendig_abgedeckt: string[]; teilweise_abgedeckt: string[]; nicht_abgedeckt: string[] }
-        hinweise_fuer_lehrkraft: string[]
-        spielfunktion: string
-        begruendung_anpassungen: string | null
-      }
-    }
+    lernziel: { schritt_7_lernziel: { original: string }; schritt_9_ampel: { farbe: string; lernziel_mvp_variante: string | null } }
+    check: { schritt_21_lehrkraft_check: { gesamtampel: 'gruen' | 'gelb' | 'rot'; lernziel_original: string; lernziel_mvp_variante: string | null; dimensionen: Record<string, unknown>; lernzielanteile: { vollstaendig_abgedeckt: string[]; teilweise_abgedeckt: string[]; nicht_abgedeckt: string[] }; hinweise_fuer_lehrkraft: string[]; spielfunktion: string; begruendung_anpassungen: string | null } }
   }
 }
 
-export default function PlaygroundPage() {
+const STEPS_NAV = ['Material', 'Details', 'KI analysiert', 'Ergebnis']
+
+const cardStyle = {
+  background: '#FFFFFF',
+  border: '1px solid #E9D5FF',
+  boxShadow: '0 2px 24px rgba(124,58,237,0.08)',
+  borderRadius: 20,
+}
+
+const inputStyle = {
+  width: '100%',
+  border: '1.5px solid #E9D5FF',
+  borderRadius: 10,
+  padding: '10px 14px',
+  fontSize: 14,
+  background: '#FAFAFA',
+  color: '#1F1235',
+  outline: 'none',
+}
+
+const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#1F1235' }
+
+export default function GameErstellenPage() {
   const [step, setStep] = useState<Step>('upload')
   const [file, setFile] = useState<File | null>(null)
   const [laufenderSchritt, setLaufenderSchritt] = useState(0)
@@ -68,13 +63,10 @@ export default function PlaygroundPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  // Schritt 1: Datei gewählt → zu Metadata
-  function onFile(f: File) {
-    setFile(f)
-    setStep('metadata')
-  }
+  const stepIndex = step === 'upload' ? 0 : step === 'metadata' ? 1 : step === 'analysing' ? 2 : step === 'result' ? 3 : 0
 
-  // Schritt 2: Metadata ausgefüllt → Upload + Analyse starten
+  function onFile(f: File) { setFile(f); setStep('metadata') }
+
   function onSubmitMetadata(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
@@ -88,14 +80,11 @@ export default function PlaygroundPage() {
     startTransition(async () => {
       setStep('analysing')
       setErrorMsg(null)
-
-      // Simulated Schritt-Fortschritt während die Pipeline läuft
       const interval = setInterval(() => {
         setLaufenderSchritt((s) => Math.min(s + 1, ANALYSE_SCHRITTE.length - 1))
       }, 3000)
 
       try {
-        // 1. Upload
         const formData = new FormData()
         formData.append('file', file!)
         formData.append('fach', fach)
@@ -110,22 +99,16 @@ export default function PlaygroundPage() {
         }
         const { material } = await uploadRes.json()
 
-        // 2. Analyse
         const analyseRes = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            materialId: material.id,
-            lernzielLehrkraft: lernziel || undefined,
-            zeitrahmenMinuten: zeitrahmen,
-          }),
+          body: JSON.stringify({ materialId: material.id, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen }),
         })
         if (!analyseRes.ok) {
           const body = await analyseRes.json()
           throw new Error(body.error ?? 'Analyse fehlgeschlagen')
         }
         const data = await analyseRes.json()
-
         clearInterval(interval)
         setLaufenderSchritt(ANALYSE_SCHRITTE.length)
         setAnalyseResult({ spielId: data.spielId, result: data.result })
@@ -139,118 +122,171 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-1">Playground</h1>
-      <p className="text-muted-foreground mb-8 text-sm">Material hochladen → KI analysiert → Spiel generieren</p>
+    <div className="p-8 max-w-3xl">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: '#1F1235' }}>Game erstellen</h1>
+        <p className="text-sm mt-1" style={{ color: '#7A6A94' }}>Material hochladen → KI analysiert → Spiel generieren</p>
+      </div>
 
-      {/* Schritt 1: Upload */}
-      {step === 'upload' && (
-        <UploadZone onFile={onFile} />
+      {/* Step Progress */}
+      {step !== 'error' && (
+        <div className="flex items-center gap-0 mb-8">
+          {STEPS_NAV.map((s, i) => (
+            <div key={i} className="flex items-center flex-1">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all"
+                  style={{
+                    background: i <= stepIndex ? '#7C3AED' : '#E9D5FF',
+                    color: i <= stepIndex ? 'white' : '#7A6A94',
+                  }}>
+                  {i < stepIndex ? '✓' : i + 1}
+                </div>
+                <span className="text-xs font-medium whitespace-nowrap"
+                  style={{ color: i === stepIndex ? '#7C3AED' : i < stepIndex ? '#1F1235' : '#7A6A94' }}>
+                  {s}
+                </span>
+              </div>
+              {i < STEPS_NAV.length - 1 && (
+                <div className="flex-1 h-0.5 mx-3" style={{ background: i < stepIndex ? '#7C3AED' : '#E9D5FF' }} />
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* Schritt 2: Metadata */}
+      {/* Step 1: Upload */}
+      {step === 'upload' && (
+        <div style={cardStyle} className="p-8">
+          <h2 className="text-lg font-bold mb-1" style={{ color: '#1F1235' }}>Material hochladen</h2>
+          <p className="text-sm mb-6" style={{ color: '#7A6A94' }}>Lade ein PDF oder eine Textdatei mit deinem Unterrichtsmaterial hoch.</p>
+          <UploadZone onFile={onFile} />
+        </div>
+      )}
+
+      {/* Step 2: Metadata */}
       {step === 'metadata' && file && (
-        <form onSubmit={onSubmitMetadata} className="flex flex-col gap-5">
-          <div className="flex items-center gap-3 bg-muted/40 rounded-lg px-4 py-3">
+        <div style={cardStyle} className="p-8">
+          <h2 className="text-lg font-bold mb-1" style={{ color: '#1F1235' }}>Details angeben</h2>
+          <p className="text-sm mb-6" style={{ color: '#7A6A94' }}>Damit die KI ein passendes Spiel erstellt, brauchen wir noch ein paar Infos.</p>
+
+          {/* File badge */}
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6"
+            style={{ background: '#F6F1FF', border: '1px solid #E9D5FF' }}>
             <span className="text-xl">📄</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{file.name}</p>
-              <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
+              <p className="text-sm font-semibold truncate" style={{ color: '#1F1235' }}>{file.name}</p>
+              <p className="text-xs" style={{ color: '#7A6A94' }}>{(file.size / 1024).toFixed(0)} KB</p>
             </div>
-            <button type="button" onClick={() => setStep('upload')} className="text-xs text-muted-foreground hover:text-foreground">
-              Ändern
+            <button type="button" onClick={() => setStep('upload')}
+              className="text-xs font-medium transition-colors"
+              style={{ color: '#7C3AED' }}>Ändern</button>
+          </div>
+
+          <form onSubmit={onSubmitMetadata} className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label style={labelStyle}>Fach</label>
+                <select name="fach" required style={inputStyle}>
+                  <option value="">Bitte wählen</option>
+                  {FAECHER.map((f) => <option key={f}>{f}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Jahrgangsstufe</label>
+                <select name="jahrgangsstufe" required style={inputStyle}>
+                  <option value="">Bitte wählen</option>
+                  {STUFEN.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Schulform</label>
+                <select name="schulform" required style={inputStyle}>
+                  <option value="">Bitte wählen</option>
+                  {SCHULFORMEN.map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Bundesland</label>
+                <select name="bundesland" required style={inputStyle}>
+                  <option value="">Bitte wählen</option>
+                  {BUNDESLAENDER.map((b) => <option key={b}>{b}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Zeitrahmen (Minuten)</label>
+              <input name="zeitrahmen" type="number" defaultValue={15} min={5} max={90} style={{ ...inputStyle, width: 120 }} />
+            </div>
+
+            <div>
+              <label style={labelStyle}>
+                Eigenes Lernziel <span style={{ color: '#7A6A94', fontWeight: 400 }}>(optional)</span>
+              </label>
+              <input name="lernziel" type="text" placeholder="Die Schüler können… indem sie…" style={inputStyle} />
+              <p className="text-xs mt-1.5" style={{ color: '#7A6A94' }}>Ohne Angabe formuliert die KI ein Lernziel aus dem Material.</p>
+            </div>
+
+            <button type="submit" disabled={isPending}
+              className="w-full rounded-xl py-3 text-sm font-bold transition-all mt-2"
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white', boxShadow: '0 4px 20px rgba(124,58,237,0.35)', opacity: isPending ? 0.6 : 1 }}>
+              {isPending ? 'Wird gestartet…' : '✦ Spiel generieren →'}
             </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Fach</label>
-              <select name="fach" required className="w-full border rounded-md px-3 py-2 text-sm bg-background">
-                <option value="">Bitte wählen</option>
-                {FAECHER.map((f) => <option key={f}>{f}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Jahrgangsstufe</label>
-              <select name="jahrgangsstufe" required className="w-full border rounded-md px-3 py-2 text-sm bg-background">
-                <option value="">Bitte wählen</option>
-                {STUFEN.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Schulform</label>
-              <select name="schulform" required className="w-full border rounded-md px-3 py-2 text-sm bg-background">
-                <option value="">Bitte wählen</option>
-                {SCHULFORMEN.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Bundesland</label>
-              <select name="bundesland" required className="w-full border rounded-md px-3 py-2 text-sm bg-background">
-                <option value="">Bitte wählen</option>
-                {BUNDESLAENDER.map((b) => <option key={b}>{b}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Zeitrahmen (Minuten)
-            </label>
-            <input name="zeitrahmen" type="number" defaultValue={15} min={5} max={90}
-              className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Eigenes Lernziel <span className="text-muted-foreground font-normal">(optional)</span>
-            </label>
-            <input name="lernziel" type="text" placeholder="Die Schüler können… indem sie…"
-              className="w-full border rounded-md px-3 py-2 text-sm bg-background" />
-            <p className="text-xs text-muted-foreground mt-1">
-              Ohne Angabe formuliert die KI ein Lernziel aus dem Material.
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
-          >
-            Spiel generieren →
-          </button>
-        </form>
+          </form>
+        </div>
       )}
 
-      {/* Schritt 3: Analyse läuft */}
+      {/* Step 3: Analysing */}
       {step === 'analysing' && (
-        <div className="flex flex-col gap-4">
-          <div className="text-sm text-muted-foreground mb-2">KI analysiert Ihr Material in 21 Schritten…</div>
-          <div className="flex flex-col gap-1.5">
+        <div style={cardStyle} className="p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)' }}>
+              🤖
+            </div>
+            <div>
+              <h2 className="text-base font-bold" style={{ color: '#1F1235' }}>KI analysiert dein Material</h2>
+              <p className="text-xs" style={{ color: '#7A6A94' }}>21 Schritte · ca. 60–90 Sekunden</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="rounded-full h-2 mb-6" style={{ background: '#E9D5FF' }}>
+            <div className="h-2 rounded-full transition-all duration-500"
+              style={{ width: `${(laufenderSchritt / ANALYSE_SCHRITTE.length) * 100}%`, background: 'linear-gradient(90deg, #7C3AED, #A855F7)' }} />
+          </div>
+
+          <div className="flex flex-col gap-1">
             {ANALYSE_SCHRITTE.map((s, i) => (
-              <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
-                ${i < laufenderSchritt ? 'text-green-700' : i === laufenderSchritt ? 'bg-primary/5 text-primary font-medium' : 'text-muted-foreground'}`}>
-                <span className="w-5 text-center flex-shrink-0">
+              <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+                style={{
+                  background: i === laufenderSchritt ? '#F6F1FF' : 'transparent',
+                  color: i < laufenderSchritt ? '#059669' : i === laufenderSchritt ? '#7C3AED' : '#C4B5FD',
+                }}>
+                <span className="w-5 text-center flex-shrink-0 text-xs">
                   {i < laufenderSchritt ? '✓' : i === laufenderSchritt ? '⟳' : `${i + 1}`}
                 </span>
-                {s}
+                <span className={i === laufenderSchritt ? 'font-semibold' : ''}>{s}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Schritt 4: Ergebnis + Lehrkraft-Check */}
+      {/* Step 4: Result */}
       {step === 'result' && analyseResult && (
-        <div className="flex flex-col gap-6">
-          <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-            <p className="text-sm font-medium text-green-800">
-              ✅ Spiel generiert — bitte prüfen und freigeben.
-            </p>
-            <a href={`/modules/${analyseResult.spielId}`}
-               className="text-xs text-green-700 hover:underline mt-1 block">
-              → Zum Modul wechseln
-            </a>
+        <div className="flex flex-col gap-5">
+          <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+            style={{ background: '#D1FAE5', border: '1px solid #6EE7B7' }}>
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="text-sm font-bold" style={{ color: '#065F46' }}>Spiel erfolgreich erstellt!</p>
+              <a href={`/modules/${analyseResult.spielId}`}
+                className="text-xs font-medium" style={{ color: '#059669' }}>
+                → Zum Modul wechseln & freigeben
+              </a>
+            </div>
           </div>
           <LehrkraftCheckPanel
             spielId={analyseResult.spielId}
@@ -260,15 +296,18 @@ export default function PlaygroundPage() {
         </div>
       )}
 
-      {/* Fehler */}
+      {/* Error */}
       {step === 'error' && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-5">
-          <p className="font-medium text-red-800 mb-1">Fehler</p>
-          <p className="text-sm text-red-700">{errorMsg}</p>
-          <button onClick={() => setStep('upload')}
-            className="mt-4 text-sm text-red-700 hover:underline">
-            ← Neu versuchen
-          </button>
+        <div className="rounded-2xl p-6" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div>
+              <p className="font-bold text-sm mb-1" style={{ color: '#991B1B' }}>Fehler beim Erstellen</p>
+              <p className="text-sm" style={{ color: '#B91C1C' }}>{errorMsg}</p>
+              <button onClick={() => setStep('upload')} className="mt-4 text-sm font-medium"
+                style={{ color: '#7C3AED' }}>← Neu versuchen</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
