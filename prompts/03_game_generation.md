@@ -154,7 +154,7 @@ Anforderungen an Distraktoren:
     {
       "aufgabe_id": "Q1",
       "text": "<Aufgabentext>",
-      "antwortformat": "<z.B. Zuordnung>",
+      "antwortformat": "<exakter Wert aus der Antwortformat-Liste, z.B. zuordnung>",
       "loesungen": ["<richtige Lösung>"],
       "teillösungen": ["<Teillösung oder null>"],
       "abschnitt_ref": "<z.B. A1>",

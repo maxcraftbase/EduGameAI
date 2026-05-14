@@ -113,22 +113,23 @@ Bei Gelb oder Rot:
 
 Wähle aus den MVP-geeigneten Formaten:
 
-Geeignet für MVP (regelbasiert auswertbar):
-- Single Choice
-- Multiple Choice
-- Zuordnung
-- Reihenfolge / Sortierung
-- Drag-and-Drop
-- Lückentext mit festen Begriffen
-- Fehler markieren
-- Modell beschriften
-- Satzbaustein-Erklärung
-- einfache Fallentscheidung mit klaren Kriterien
-- Kriterienzuordnung
-- Pro-Contra-Sortierung
-- Ursache-Folge-Kette
-- Textstelle-Beleg-Zuordnung
-- Deutungshypothese mit vorgegebenem Beleg
+Geeignet für MVP (regelbasiert auswertbar — exakter JSON-Wert in Backticks):
+- `single_choice`: Single Choice
+- `multiple_choice`: Multiple Choice
+- `zuordnung`: Zuordnung
+- `reihenfolge`: Reihenfolge
+- `sortierung`: Sortierung
+- `drag_and_drop`: Drag-and-Drop
+- `lueckentext_feste_begriffe`: Lückentext mit festen Begriffen
+- `fehler_markieren`: Fehler markieren
+- `modell_beschriften`: Modell beschriften
+- `satzbaustein_erklaerung`: Satzbaustein-Erklärung
+- `fallentscheidung`: einfache Fallentscheidung mit klaren Kriterien
+- `kriterienzuordnung`: Kriterienzuordnung
+- `pro_contra_sortierung`: Pro-Contra-Sortierung
+- `ursache_folge_kette`: Ursache-Folge-Kette
+- `textstelle_beleg_zuordnung`: Textstelle-Beleg-Zuordnung
+- `deutungshypothese_beleg`: Deutungshypothese mit vorgegebenem Beleg
 
 Nicht geeignet für MVP (keine freie KI-Bewertung im Standard):
 - freie Langantworten
@@ -189,8 +190,8 @@ Begründe die Formatwahl im Hinblick auf:
     }
   },
   "schritt_10_antwortformat": {
-    "primäres_format": "<z.B. Zuordnung>",
-    "sekundäres_format": "<z.B. Single Choice — oder null>",
+    "primäres_format": "<exakter Wert aus der Antwortformat-Liste, z.B. zuordnung>",
+    "sekundäres_format": "<exakter Wert aus der Antwortformat-Liste, z.B. single_choice — oder null>",
     "begruendung": "<warum dieses Format zur Wissensstruktur und Ampel passt>",
     "ki_bewertung_pro_antwort": false
   }
