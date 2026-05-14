@@ -183,6 +183,37 @@ const LernpfadTypSchema = z.enum([
   'Verfahren_Anwendung',
 ])
 
+const LernpfadLevelSchema = z.object({
+  level_nr: z.number().int().positive(),
+  spiel_nr: z.number().int().positive(),
+  bearbeitungszeit_minuten: z.number().positive(),
+  didaktische_funktion: z.string().min(1),
+  lerninhalt: z.string().min(1),
+  komplexitaetsstufe: z.string().min(1),
+  aufgabenformat: z.string().min(1),
+  game_engine: z.string().min(1),
+  game_skin: z.string().min(1),
+  differenzierung: z.string().min(1),
+  feedbacklogik: z.string().min(1),
+  diagnostischer_wert: z.string().min(1),
+  beitrag_lernziel: z.string().min(1),
+})
+
+const LernpfadSpielSchema = z.object({
+  spiel_nr: z.number().int().positive(),
+  titel: z.string().min(1),
+  funktion: z.string().min(1),
+  level: z.array(LernpfadLevelSchema).min(1),
+})
+
+const ZeitstrukturplanSchema = z.object({
+  gesamtzeit_minuten: z.number().positive(),
+  anzahl_spiele: z.number().int().positive(),
+  anzahl_level: z.number().int().positive(),
+  begruendung_umfang: z.string().min(1),
+  abdeckung_hinweis: z.union([z.string(), z.null()]),
+})
+
 export const LernpfadOutputSchema = z.object({
   lernpfad_typ: LernpfadTypSchema,
   lernpfad_beschreibung: z.string().min(1),
@@ -191,7 +222,9 @@ export const LernpfadOutputSchema = z.object({
   lerninhalt_anteil: z.number().min(50).max(90),
   spielerlebnis_anteil: z.number().min(10).max(50),
   begruendung: z.string().min(1),
-  besonderheiten: z.string().optional(),
+  besonderheiten: z.union([z.string(), z.null()]).optional(),
+  zeitstrukturplan: ZeitstrukturplanSchema,
+  spiele: z.array(LernpfadSpielSchema).min(1),
 })
 
 export type LernpfadOutput = z.infer<typeof LernpfadOutputSchema>

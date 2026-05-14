@@ -136,7 +136,7 @@ export async function determineLearningObjective(input: {
 export async function determineLernpfad(input: {
   analyse: AnalyseOutput
   lernziel: LernzielOutput
-  kontext: { fach: string; jahrgangsstufe: string; schulform: string; bundesland: string }
+  kontext: { fach: string; jahrgangsstufe: string; schulform: string; bundesland: string; zeitrahmenMinuten?: number }
 }): Promise<LernpfadOutput> {
   return callClaude(
     'Lernpfad (Schritte 12–13)',
@@ -144,7 +144,13 @@ export async function determineLernpfad(input: {
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
-      kontext: input.kontext,
+      kontext: {
+        fach: input.kontext.fach,
+        jahrgangsstufe: input.kontext.jahrgangsstufe,
+        schulform: input.kontext.schulform,
+        bundesland: input.kontext.bundesland,
+        zeitrahmen_minuten: input.kontext.zeitrahmenMinuten ?? null,
+      },
     }),
     LernpfadOutputSchema
   )
