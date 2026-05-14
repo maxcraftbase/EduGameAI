@@ -111,32 +111,16 @@ Bei Gelb oder Rot:
 
 ### Schritt 10: Antwortformat und Antwortanalyse bestimmen
 
-Wähle aus den MVP-geeigneten Formaten:
+Wähle ausschließlich aus diesen **6 implementierten Formaten** (exakter JSON-Wert in Backticks):
 
-Geeignet für MVP (regelbasiert auswertbar — exakter JSON-Wert in Backticks):
-- `single_choice`: Single Choice
-- `multiple_choice`: Multiple Choice
-- `zuordnung`: Zuordnung
-- `reihenfolge`: Reihenfolge
-- `sortierung`: Sortierung
-- `drag_and_drop`: Drag-and-Drop
-- `lueckentext_feste_begriffe`: Lückentext mit festen Begriffen
-- `fehler_markieren`: Fehler markieren
-- `modell_beschriften`: Modell beschriften
-- `satzbaustein_erklaerung`: Satzbaustein-Erklärung
-- `fallentscheidung`: einfache Fallentscheidung mit klaren Kriterien
-- `kriterienzuordnung`: Kriterienzuordnung
-- `pro_contra_sortierung`: Pro-Contra-Sortierung
-- `ursache_folge_kette`: Ursache-Folge-Kette
-- `textstelle_beleg_zuordnung`: Textstelle-Beleg-Zuordnung
-- `deutungshypothese_beleg`: Deutungshypothese mit vorgegebenem Beleg
+- `single_choice` — Eine richtige Antwort aus 4 Optionen
+- `multiple_choice` — Mehrere richtige Antworten aus 5–6 Optionen
+- `zuordnung` — Begriffe ihren Definitionen/Kategorien zuordnen
+- `reihenfolge` — Schritte, Prozesse, Ereignisse sortieren
+- `hangman` — Fachbegriff Buchstabe für Buchstabe erraten
+- `space_invaders` — Richtige Antworten abschießen, falsche stehen lassen
 
-Nicht geeignet für MVP (keine freie KI-Bewertung im Standard):
-- freie Langantworten
-- offene Erklärung in eigenen Worten
-- freie Begründung ohne feste Kriterien
-- komplexe Urteilsbildung ohne vorgegebene Kriterien
-- kreative Textproduktion
+Kein anderer Wert ist gültig. Wähle für `sekundäres_format` ebenfalls nur aus dieser Liste oder setze `null`.
 
 Begründe die Formatwahl im Hinblick auf:
 - Wissensstruktur und Denkhandlung (aus Schritt 5)
