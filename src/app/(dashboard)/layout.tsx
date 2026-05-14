@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/utils/supabase/client'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '⊞' },
@@ -16,6 +18,25 @@ const bottomItems = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [displayName, setDisplayName] = useState('')
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.name) setDisplayName(data.name)
+        })
+    })
+  }, [])
+
+  const avatarInitial = displayName ? displayName[0].toUpperCase() : 'L'
+  const label = displayName || 'Lehrkraft'
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -90,10 +111,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             style={{ background: 'rgba(124,58,237,0.1)' }}>
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
               style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: 'white' }}>
-              L
+              {avatarInitial}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate" style={{ color: '#C4B5FD' }}>Lehrkraft</p>
+              <p className="text-xs font-medium truncate" style={{ color: '#C4B5FD' }}>{label}</p>
             </div>
           </div>
         </div>
