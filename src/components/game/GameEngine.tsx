@@ -69,6 +69,7 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
   const [ergebnisse, setErgebnisse] = useState<AufgabenErgebnis[]>([])
   const [abgeschlossen, setAbgeschlossen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [bereit, setBereit] = useState(false) // Weiter-Button sichtbar
 
   const aufgabe = aufgaben[current]
   const fortschritt = Math.round((current / aufgaben.length) * 100)
@@ -76,7 +77,6 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
   const handleAntwort = useCallback(async (antworten: string[], korrekt: boolean) => {
     setErgebnisse((prev) => [...prev, { aufgabeId: aufgabe.aufgabe_id, antworten, korrekt }])
 
-    setSubmitting(true)
     try {
       await fetch('/api/answers', {
         method: 'POST',
@@ -84,13 +84,16 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
         body: JSON.stringify({ sessionId, aufgabeId: aufgabe.aufgabe_id, antwortWert: antworten }),
       })
     } catch { /* Spiel läuft weiter */ }
-    setSubmitting(false)
 
-    setTimeout(() => {
-      if (current + 1 >= aufgaben.length) setAbgeschlossen(true)
-      else setCurrent((c) => c + 1)
-    }, 1500)
-  }, [aufgabe, current, aufgaben.length, sessionId])
+    setBereit(true)
+  }, [aufgabe, sessionId])
+
+  function weiter() {
+    setBereit(false)
+    setSubmitting(false)
+    if (current + 1 >= aufgaben.length) setAbgeschlossen(true)
+    else setCurrent((c) => c + 1)
+  }
 
   if (abgeschlossen) {
     const korrektAnzahl = ergebnisse.filter((e) => e.korrekt).length
@@ -197,6 +200,15 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
         )}
       </div>
 
+      {bereit && (
+        <button
+          onClick={weiter}
+          className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all"
+          style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)' }}
+        >
+          {current + 1 >= aufgaben.length ? 'Auswertung ansehen →' : 'Weiter →'}
+        </button>
+      )}
       {submitting && <p className="text-xs text-muted-foreground text-center">Speichern…</p>}
     </div>
   )

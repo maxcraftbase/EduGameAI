@@ -143,9 +143,9 @@ function PlayInner({ gameId }: { gameId: string }) {
 export default function PlayPage({ params }: { params: Promise<{ gameId: string }> }) {
   const [gameId, setGameId] = useState<string | null>(null)
 
-  if (gameId === null) {
+  useEffect(() => {
     params.then(({ gameId: id }) => setGameId(id))
-  }
+  }, [params])
 
   if (!gameId) {
     return (
