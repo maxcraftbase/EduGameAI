@@ -20,11 +20,16 @@ function makeCodes(anzahl: number): string[] {
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Klasse { id: string; name: string; jahrgangsstufe: string; fach: string }
 interface Student { id: string; code: string }
+interface GameInfo { id: string; titel: string; status: string }
 interface ClassGame {
   id: string
   game_id: string
   zugewiesen_am: string
-  games: { id: string; titel: string; status: string } | null
+  games: GameInfo | GameInfo[] | null
+}
+function gameTitle(cg: ClassGame): string {
+  if (!cg.games) return 'Unbenanntes Spiel'
+  return Array.isArray(cg.games) ? (cg.games[0]?.titel ?? 'Unbenanntes Spiel') : cg.games.titel
 }
 interface AvailableGame { id: string; titel: string; status: string }
 
@@ -51,9 +56,6 @@ const btnPrimary = {
 } as const
 
 // ── Ampel-Farben ──────────────────────────────────────────────────────────────
-const AMPEL_BG: Record<string, string> = {
-  gruen: '#D1FAE5', gelb: '#FEF3C7', rot: '#FEE2E2',
-}
 const AMPEL_COLOR: Record<string, string> = {
   gruen: '#059669', gelb: '#D97706', rot: '#DC2626',
 }
@@ -115,7 +117,7 @@ export default function ClassesPage() {
       .select('id, game_id, zugewiesen_am, games(id, titel, status)')
       .eq('class_id', classId)
       .order('zugewiesen_am', { ascending: false })
-    setClassGames((data ?? []) as ClassGame[])
+    setClassGames((data ?? []) as unknown as ClassGame[])
     setGamesLoading(false)
   }, [])
 
@@ -477,7 +479,7 @@ export default function ClassesPage() {
                         <span className="text-lg">🎮</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate" style={{ color: '#1F1235' }}>
-                            {cg.games?.titel || 'Unbenanntes Spiel'}
+                            {gameTitle(cg)}
                           </p>
                           <p className="text-xs" style={{ color: '#7A6A94' }}>
                             Zugewiesen {new Date(cg.zugewiesen_am).toLocaleDateString('de-DE')}
@@ -521,7 +523,7 @@ export default function ClassesPage() {
                         }}>
                         <span className="text-lg">🎮</span>
                         <p className="text-sm font-semibold flex-1 truncate" style={{ color: '#1F1235' }}>
-                          {cg.games?.titel || 'Unbenanntes Spiel'}
+                          {gameTitle(cg)}
                         </p>
                         <button onClick={() => onDiagnose(cg.game_id)} disabled={diagnoseLoading}
                           style={{ ...btnPrimary, padding: '7px 14px', fontSize: 12, opacity: diagnoseLoading && selectedGameId === cg.game_id ? 0.6 : 1 }}>
