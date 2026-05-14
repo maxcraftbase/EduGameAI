@@ -61,23 +61,12 @@ const KomplexitaetsstufeSchema = z.union([
   z.literal(5), z.literal(6), z.literal(7),
 ])
 
+// Nur implementierte Templates — wird erweitert wenn neue Komponenten gebaut sind
 const AntwortformatSchema = z.enum([
   'single_choice',
   'multiple_choice',
   'zuordnung',
   'reihenfolge',
-  'sortierung',
-  'drag_and_drop',
-  'lueckentext_feste_begriffe',
-  'fehler_markieren',
-  'modell_beschriften',
-  'satzbaustein_erklaerung',
-  'fallentscheidung',
-  'kriterienzuordnung',
-  'pro_contra_sortierung',
-  'ursache_folge_kette',
-  'textstelle_beleg_zuordnung',
-  'deutungshypothese_beleg',
 ])
 
 const AmpelSchema = z.enum(['gruen', 'gelb', 'rot'])
@@ -201,27 +190,14 @@ export const SpielOutputSchema = z.object({
     text: z.string().min(1),
     antwortformat: AntwortformatSchema,
     loesungen: z.array(z.string()).min(1),
-    teillösungen: z.array(z.string()),
+    distraktoren: z.array(z.string()),
+    hilfen: z.array(z.string()),
     abschnitt_ref: z.string().min(1),
     teilkompetenz: z.string().min(1),
     komplexitaetsstufe: KomplexitaetsstufeSchema,
   })).min(1),
-  schritt_15_differenzierung: z.array(z.object({
-    aufgabe_id: z.string().min(1),
-    leichter: DifferenzierungsStufeSchema,
-    mittel: DifferenzierungsStufeSchema,
-    schwer: DifferenzierungsStufeSchema,
-    sehr_schwer: DifferenzierungsStufeSchema,
-  })),
-  schritt_16_fehlvorstellungen: z.array(z.object({
-    aufgabe_id: z.string().min(1),
-    typische_fehler: z.array(z.object({
-      fehler: z.string(),
-      fehlvorstellung_dahinter: z.string(),
-      distraktor_repraesentiert_fehler: z.boolean(),
-      diagnose_nutzbar: z.boolean(),
-    })),
-  })),
+  schritt_15_differenzierung: z.array(z.unknown()),
+  schritt_16_fehlvorstellungen: z.array(z.unknown()),
 })
 
 export type SpielOutput = z.infer<typeof SpielOutputSchema>

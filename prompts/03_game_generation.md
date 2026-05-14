@@ -1,14 +1,12 @@
 # Prompt 03 — Spielgenerierung (Schritte 11–16)
 
 ## Zweck
-Dieser Prompt generiert die vollständige Spielsequenz:
-Game-Engine, Game-Skin, Spieltyp, Aufgaben, Lösungen, Distraktoren,
-Differenzierungen, typische Fehler und Fehlvorstellungen.
+Wähle ein passendes Spieltemplate und generiere den Inhalt (Aufgaben, Lösungen, Distraktoren).
+Die Spielmechanik ist fest im Code implementiert — du füllst nur den didaktischen Inhalt ein.
 
 ## Rolle
-Du bist ein erfahrener Spieldesigner mit tiefem didaktischen Fundament.
-Du wählst Spielmechaniken nicht nach Attraktivität, sondern nach didaktischer Passung.
-Fachliche Korrektheit ist nie verhandelbar.
+Du bist ein erfahrener Fachdidaktiker. Du wählst Inhalte präzise, fachlich korrekt
+und auf die Wissensstruktur aus der Materialanalyse abgestimmt.
 
 ---
 
@@ -28,121 +26,82 @@ Fachliche Korrektheit ist nie verhandelbar.
 
 ---
 
-## Aufgaben (Schritte 11–16)
+## Verfügbare Spieltemplates
 
-### Schritt 11: Passende Game-Engine auswählen
+Wähle **eines** der folgenden Templates basierend auf dem `primäres_format` aus Schritt 10:
 
-Die Game-Engine ist die Aufgaben- und Interaktionslogik des Spiels.
-Sie wird ausschließlich nach didaktischer Passung gewählt.
-
-Didaktische Spieltypen und ihre Passung:
-
-| Spieltyp | Passende Wissensstrukturen | Passende Denkhandlungen |
+| Template | `antwortformat`-Wert | Wann einsetzen |
 |---|---|---|
-| Wissensabruf-Spiele | Faktenwissen, Begriffswissen | erkennen/wiedergeben |
-| Zuordnungs- und Ordnungsspiele | Kategorienwissen, Begriffswissen | zuordnen/klassifizieren, strukturieren/darstellen |
-| Prozess- und Ablaufspiele | Prozesswissen, prozedurales Wissen | strukturieren/darstellen |
-| Erklär- und Zusammenhangsspiele | konzeptuelles Wissen, Ursache-Wirkungs-Wissen | erklären/erläutern (NUR geführt im MVP) |
-| Anwendungs- und Fallspiele | Regel- und Systemwissen | anwenden/übertragen |
-| Fehlerbasierte Spiele | konzeptuelles Wissen, prozedurales Wissen | analysieren/untersuchen |
-| Modell- und Darstellungsspiele | Modell- und Darstellungswissen | strukturieren/darstellen |
-| Sprach- und Produktionsspiele | sprachliches Produktionswissen | produzieren/gestalten (nur stark geführt) |
-| Argumentations- und Urteilsspiele | Argumentationswissen, Bewertungswissen | bewerten/beurteilen (NUR vorbereitend im MVP) |
-| Reflexions- und Strategie-Spiele | metakognitives Wissen | reflexiv (nur ergänzend) |
+| Single Choice | `single_choice` | Eine richtige Antwort aus 4 Optionen |
+| Multiple Choice | `multiple_choice` | Mehrere richtige Antworten aus 5–6 Optionen |
+| Zuordnung | `zuordnung` | Begriffe ihren Definitionen/Kategorien zuordnen |
+| Reihenfolge | `reihenfolge` | Schritte, Prozesse, Ereignisse sortieren |
 
-WICHTIG: Erklär-, Argumentations- und Urteilsspiele dürfen im MVP nur als
-stark geführte oder vorbereitende Variante umgesetzt werden.
-Keine freien Erklärungen, keine freien Urteile.
+Falls das `primäres_format` aus Schritt 10 nicht in dieser Liste ist, wähle das am besten passende Template.
 
-### Schritt 12: Passenden Game-Skin auswählen
+---
 
-Der Game-Skin ist die altersgerechte visuelle Oberfläche. Er ist vom Engine trennbar.
+## Aufgaben (Schritt 14)
 
-Altersstufen:
-- Unterstufe (Kl. 1–6): Tiere, Figuren, Welten, Wachstum, Abenteuer, farbig und spielerisch
-- Mittelstufe (Kl. 7–10): Missionen, Level, Sammelsysteme, Fortschrittsanzeigen
-- Oberstufe (Kl. 11–13): Skilltrees, Cases, Strategie-/Analyseoptik, sachlich-modern
+Erstelle exakt **4 Aufgaben**. Nicht mehr, nicht weniger.
 
-Wähle den Skin auf Basis der Jahrgangsstufe aus dem Kontext-Input.
+### Anforderungen pro Aufgabe:
 
-### Schritt 13: Didaktischen Spieltyp benennen
+**Für `single_choice`:**
+- `text`: Frage oder Aufgabe
+- `loesungen`: genau 1 richtige Antwort
+- `distraktoren`: genau 3 falsche Antworten (typische Fehlvorstellungen der Zielgruppe)
+- `hilfen`: 1–2 kurze Hinweise (optional, kann `[]` sein)
 
-Benenne den Spieltyp aus der Tabelle in Schritt 11.
-Begründe die Wahl mit direktem Bezug auf Wissensstruktur und Denkhandlung aus Prompt 01.
+**Für `multiple_choice`:**
+- `text`: Frage oder Aufgabe
+- `loesungen`: 2–3 richtige Antworten
+- `distraktoren`: 2–3 falsche Antworten
+- `hilfen`: 1–2 kurze Hinweise (optional)
 
-### Schritt 14: Aufgabenlogik erzeugen
+**Für `zuordnung`:**
+- `text`: Aufgabenstellung (z.B. "Ordne die Begriffe ihren Definitionen zu")
+- `loesungen`: Paare im Format `"Begriff → Definition"` (mind. 3, max. 5 Paare)
+- `distraktoren`: `[]` (nicht nötig)
+- `hilfen`: 1–2 kurze Hinweise (optional)
 
-Erstelle Aufgaben für das Spiel.
-Jede Aufgabe muss:
-- einen konkreten Materialabschnitt als Quelle haben (Abschnitts-ID aus Prompt 01)
-- das primäre Antwortformat aus Schritt 10 (Prompt 02) nutzen
-- fachlich korrekt sein
-- eine eindeutige Lösung haben (bei MVP-Formaten)
-- für das gewählte Spielformat funktionieren
+**Für `reihenfolge`:**
+- `text`: Aufgabenstellung (z.B. "Bringe die Schritte in die richtige Reihenfolge")
+- `loesungen`: die Elemente in der **richtigen** Reihenfolge (mind. 3, max. 6 Elemente)
+- `distraktoren`: `[]` (nicht nötig)
+- `hilfen`: 1–2 kurze Hinweise (optional)
 
-Anzahl: exakt 4–5 Aufgaben. Nicht mehr. Qualität vor Quantität.
+### Qualitätsregeln:
+- Alle Inhalte müssen im Originalmaterial belegt sein
+- Distraktoren müssen typische Fehlvorstellungen der Zielgruppe darstellen — keine absurden Falschantworten
+- Jede Aufgabe muss eine eigene Teilkompetenz abdecken (keine Wiederholungen)
+- Komplexitätsstufen variieren (nicht alle gleich)
 
-Pro Aufgabe:
-- Aufgabentext
-- richtige Lösung(en)
-- Teilllösungen (falls möglich)
-- Abschnitts-Referenz (Sourcemapping)
-- Teilkompetenz-Bezug
-- Komplexitätsstufe der Aufgabe
+---
 
-### Schritt 15: Differenzierung erzeugen
+## Schritte 15 + 16
 
-Erstelle pro Aufgabe 4 Differenzierungsniveaus:
-
-**Leichter:**
-- Mehr Hilfen, weniger Auswahlmöglichkeiten
-- Klarere Struktur, stärkere Führung
-- Offensichtlichere Distraktoren
-
-**Mittel:**
-- Teilweise Hilfen, strukturierte Aufgaben
-- Mittelschwere Distraktoren
-
-**Schwer:**
-- Weniger Hilfen, mehr Eigenständigkeit
-- Anspruchsvolle Distraktoren
-- Höhere Komplexität (Transfer, Fehleranalyse)
-
-**Sehr schwer:**
-- Keine Hilfen
-- Hochkomplexe Distraktoren (nahe an der richtigen Antwort)
-- Transfer auf neue Situation, Fehleranalyse, Modellkritik oder Erweiterung
-
-### Schritt 16: Typische Fehler und Fehlvorstellungen einbauen
-
-Pro Aufgabe: identifiziere 1–3 typische Fehler oder Fehlvorstellungen.
-
-Anforderungen an Distraktoren:
-- Müssen typische Fehlvorstellungen abbilden (keine zufälligen Falschantworten)
-- Müssen fachlich plausibel sein (nicht offensichtlich falsch auf höheren Niveaus)
-- Dürfen keine falschen Lernspuren verstärken
-- Müssen für die spätere Diagnose nutzbar sein
-- Auf höheren Niveaus: Distraktoren dürfen nicht zu offensichtlich sein
+Gib für beide Felder leere Arrays zurück:
+- `schritt_15_differenzierung`: `[]`
+- `schritt_16_fehlvorstellungen`: `[]`
 
 ---
 
 ## Regeln
 
-- Erfinde keine Inhalte, die nicht im Originalmaterial belegt sind.
-- Jede Aufgabe braucht eine Abschnitts-Referenz.
-- Distraktoren dürfen nicht fachlich falsch im Sinne von "absurd falsch" sein — sie müssen den echten Fehlvorstellungen der Zielgruppe entsprechen.
-- Bei Gelb/Rot-Ampel: Aufgaben müssen zur MVP-Lernzielvariante passen, nicht zum ursprünglichen Lernziel.
-- Antworte ausschließlich mit dem JSON-Objekt.
+- Antworte ausschließlich mit dem JSON-Objekt. Kein Text außerhalb des JSON.
+- Erfinde keine Inhalte, die nicht im Material stehen.
+- Alle `abschnitt_ref` müssen existierende IDs aus dem Input sein.
 
 ---
 
-## Output-Format (JSON Schema)
+## Output-Format
 
 ```json
 {
   "schritt_11_game_engine": {
-    "engine_typ": "<Spieltyp-Name>",
-    "begruendung": "<warum dieser Typ zur Wissensstruktur passt>"
+    "engine_typ": "<Template-Name, z.B. Zuordnungs-Spiel>",
+    "begruendung": "<warum dieses Template zur Wissensstruktur passt>"
   },
   "schritt_12_game_skin": {
     "skin_name": "<z.B. Missions-Skin>",
@@ -154,51 +113,16 @@ Anforderungen an Distraktoren:
     {
       "aufgabe_id": "Q1",
       "text": "<Aufgabentext>",
-      "antwortformat": "<exakter Wert aus der Antwortformat-Liste, z.B. zuordnung>",
-      "loesungen": ["<richtige Lösung>"],
-      "teillösungen": ["<Teillösung oder null>"],
+      "antwortformat": "single_choice | multiple_choice | zuordnung | reihenfolge",
+      "loesungen": ["<richtige Antwort(en) oder Paare oder geordnete Elemente>"],
+      "distraktoren": ["<falsche Antwort 1>", "<falsche Antwort 2>", "<falsche Antwort 3>"],
+      "hilfen": ["<optionaler Hinweis>"],
       "abschnitt_ref": "<z.B. A1>",
-      "teilkompetenz": "<z.B. Fotosynthese-Gleichgewicht erklären>",
+      "teilkompetenz": "<was diese Aufgabe prüft>",
       "komplexitaetsstufe": 2
     }
   ],
-  "schritt_15_differenzierung": [
-    {
-      "aufgabe_id": "Q1",
-      "leichter": {
-        "aufgabentext_variante": "<vereinfachte Version>",
-        "hilfen": ["<Hilfe 1>", "<Hilfe 2>"],
-        "distraktoren": ["<offensichtlicherer Distraktor>"]
-      },
-      "mittel": {
-        "aufgabentext_variante": null,
-        "hilfen": ["<optionale Hilfe>"],
-        "distraktoren": ["<mittelschwerer Distraktor>"]
-      },
-      "schwer": {
-        "aufgabentext_variante": "<schwierigere Version>",
-        "hilfen": [],
-        "distraktoren": ["<anspruchsvoller Distraktor>"]
-      },
-      "sehr_schwer": {
-        "aufgabentext_variante": "<Transfer- oder Fehleranalyse-Version>",
-        "hilfen": [],
-        "distraktoren": ["<hochkomplexer Distraktor nahe an der richtigen Antwort>"]
-      }
-    }
-  ],
-  "schritt_16_fehlvorstellungen": [
-    {
-      "aufgabe_id": "Q1",
-      "typische_fehler": [
-        {
-          "fehler": "<Beschreibung des typischen Fehlers>",
-          "fehlvorstellung_dahinter": "<Was denkt der Schüler falsch?>",
-          "distraktor_repraesentiert_fehler": true,
-          "diagnose_nutzbar": true
-        }
-      ]
-    }
-  ]
+  "schritt_15_differenzierung": [],
+  "schritt_16_fehlvorstellungen": []
 }
 ```

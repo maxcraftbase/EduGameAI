@@ -164,32 +164,23 @@ interface DifferenzierungsStufe {
 }
 
 export interface Aufgabe {
-  id: string
-  spiel_id: string
+  aufgabe_id: string
   text: string
   antwortformat: Antwortformat
   loesungen: string[]
-  teilloesungen: string[]
+  distraktoren: string[]
+  hilfen: string[]
   abschnitt_ref: string
-  ursprung: Ursprung
   teilkompetenz: string
   komplexitaetsstufe: Komplexitaetsstufe
-  differenzierungen: {
-    leichter: DifferenzierungsStufe
-    mittel: DifferenzierungsStufe
-    schwer: DifferenzierungsStufe
-    sehr_schwer: DifferenzierungsStufe
+  // Legacy-Felder (bleiben für rückwärtskompatible DB-Einträge)
+  differenzierungen?: {
+    leichter?: DifferenzierungsStufe
+    mittel?: DifferenzierungsStufe
+    schwer?: DifferenzierungsStufe
+    sehr_schwer?: DifferenzierungsStufe
   }
-  fehlvorstellungen: {
-    fehler: string
-    fehlvorstellung: string
-    distraktor_repraesentiert: boolean
-  }[]
-  feedbackbausteine: {
-    bei_korrekt: string
-    bei_falsch: string
-    bei_fehlvorstellung: Record<string, string>
-  }
+  fehlvorstellungen?: unknown[]
 }
 
 export interface Spiel {

@@ -119,23 +119,17 @@ function buildAnalyseRow(
 }
 
 function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput) {
-  // Aufgaben, Differenzierungen und Fehlvorstellungen zusammenführen
-  const aufgaben = s.schritt_14_aufgaben.map((q) => {
-    const diff = s.schritt_15_differenzierung.find((d) => d.aufgabe_id === q.aufgabe_id)
-    const fehler = s.schritt_16_fehlvorstellungen.find((f) => f.aufgabe_id === q.aufgabe_id)
-    return {
-      ...q,
-      differenzierungen: diff
-        ? {
-            leichter: diff.leichter,
-            mittel: diff.mittel,
-            schwer: diff.schwer,
-            sehr_schwer: diff.sehr_schwer,
-          }
-        : null,
-      fehlvorstellungen: fehler?.typische_fehler ?? [],
-    }
-  })
+  const aufgaben = s.schritt_14_aufgaben.map((q) => ({
+    aufgabe_id: q.aufgabe_id,
+    text: q.text,
+    antwortformat: q.antwortformat,
+    loesungen: q.loesungen,
+    distraktoren: q.distraktoren,
+    hilfen: q.hilfen,
+    abschnitt_ref: q.abschnitt_ref,
+    teilkompetenz: q.teilkompetenz,
+    komplexitaetsstufe: q.komplexitaetsstufe,
+  }))
 
   return {
     analyse_id: analyseId,
