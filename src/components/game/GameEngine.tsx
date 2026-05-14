@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react'
 import { MultipleChoice } from './MultipleChoice'
 import { Zuordnung } from './Zuordnung'
 import { Reihenfolge } from './Reihenfolge'
+import { Hangman } from './Hangman'
+import { SpaceInvaders } from './SpaceInvaders'
 
 interface Aufgabe {
   aufgabe_id: string
@@ -135,7 +137,23 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
       </div>
 
       <div className="border rounded-2xl p-6">
-        {format === 'reihenfolge' ? (
+        {format === 'hangman' ? (
+          <Hangman
+            text={aufgabe.text}
+            wort={aufgabe.loesungen[0] ?? ''}
+            hilfen={hilfen}
+            feedback={feedback}
+            onAntwort={handleAntwort}
+          />
+        ) : format === 'space_invaders' ? (
+          <SpaceInvaders
+            text={aufgabe.text}
+            loesungen={aufgabe.loesungen}
+            distraktoren={aufgabe.distraktoren ?? []}
+            feedback={feedback}
+            onAntwort={handleAntwort}
+          />
+        ) : format === 'reihenfolge' ? (
           <Reihenfolge
             text={aufgabe.text}
             richtigeReihenfolge={aufgabe.loesungen}
