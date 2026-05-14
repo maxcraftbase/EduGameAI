@@ -72,7 +72,11 @@ export async function POST(request: NextRequest) {
         if (err instanceof PipelineValidationError) message = `Validierungsfehler: ${err.message}`
         else if (err instanceof PipelineJsonError) message = `KI hat kein JSON zurückgegeben: ${err.schritt}`
         else if (err instanceof PipelineApiError) message = `KI-API nicht erreichbar: ${err.schritt}`
-        else console.error(err)
+        else {
+          const detail = err instanceof Error ? err.message : JSON.stringify(err)
+          message = `Analyse fehlgeschlagen: ${detail}`
+          console.error('[analyze]', err)
+        }
         send({ type: 'error', message })
       }
 
@@ -139,6 +143,8 @@ function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput) {
     game_engine: s.schritt_11_game_engine.engine_typ,
     game_skin: s.schritt_12_game_skin.altersstufe,
     aufgaben,
+    zeitregelung_sekunden: null,
+    zeitdruck_aktiv: false,
     status: 'entwurf',
     raw_output: s as unknown as Record<string, unknown>,
   }
