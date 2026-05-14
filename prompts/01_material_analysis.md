@@ -49,48 +49,48 @@ Jede Aussage muss:
 Bestimme, welche Wissensformen im Material dominant sind.
 Wähle alle zutreffenden Formen und ordne sie nach Gewicht (primär, sekundär).
 
-Verfügbare Wissensformen:
-- Faktenwissen: isolierte Fakten, Daten, Namen, Zahlen
-- Begriffswissen: Fachbegriffe, Definitionen, Abgrenzungen
-- konzeptuelles Wissen: Zusammenhänge, Prinzipien, Modelle
-- prozedurales Wissen: Handlungsschritte, Methoden, Verfahren
-- strategisches Wissen: Lösungsstrategien, Planungslogiken
-- metakognitives Wissen: Lernstrategien, Reflexion
-- sprachliches Wissen: Sprachstrukturen, Textsorten, Formulierungen
-- interpretatives Wissen: Deutungen, Perspektiven, Sinnzuschreibungen
-- Bewertungs- und Urteilswissen: Kriterien, Argumente, begründete Urteile
+Verfügbare Wissensformen (exakter JSON-Wert in Backticks):
+- `faktenwissen`: isolierte Fakten, Daten, Namen, Zahlen
+- `begriffswissen`: Fachbegriffe, Definitionen, Abgrenzungen
+- `konzeptuelles_wissen`: Zusammenhänge, Prinzipien, Modelle
+- `prozedurales_wissen`: Handlungsschritte, Methoden, Verfahren
+- `strategisches_wissen`: Lösungsstrategien, Planungslogiken
+- `metakognitives_wissen`: Lernstrategien, Reflexion
+- `sprachliches_wissen`: Sprachstrukturen, Textsorten, Formulierungen
+- `interpretatives_wissen`: Deutungen, Perspektiven, Sinnzuschreibungen
+- `bewertungs_urteilswissen`: Kriterien, Argumente, begründete Urteile
 
 ### Schritt 4: Lernform bestimmen
 Bestimme, welche Lernform durch das Material primär angesprochen wird.
 Wähle die 1–2 passendsten Formen.
 
-Verfügbare Lernformen:
-- wiederholendes Lernen: Fakten, Begriffe, Definitionen festigen
-- verstehendes Lernen: Zusammenhänge und Konzepte durchdringen
-- anwendungsorientiertes Lernen: Wissen auf Situationen oder Probleme anwenden
-- entdeckendes Lernen: Strukturen, Regeln oder Zusammenhänge selbst erschließen
-- fehlerbasiertes Lernen: aus Fehlern und Fehlvorstellungen lernen
-- problemlösendes Lernen: Probleme analysieren und Lösungen entwickeln
-- sprachproduktives Lernen: fachliche Sprache verwenden und produzieren
-- reflexives Lernen: das eigene Verstehen und Vorgehen bedenken
+Verfügbare Lernformen (exakter JSON-Wert in Backticks):
+- `wiederholendes_lernen`: Fakten, Begriffe, Definitionen festigen
+- `verstehendes_lernen`: Zusammenhänge und Konzepte durchdringen
+- `anwendungsorientiertes_lernen`: Wissen auf Situationen oder Probleme anwenden
+- `entdeckendes_lernen`: Strukturen, Regeln oder Zusammenhänge selbst erschließen
+- `fehlerbasiertes_lernen`: aus Fehlern und Fehlvorstellungen lernen
+- `problemloesendes_lernen`: Probleme analysieren und Lösungen entwickeln
+- `sprachproduktives_lernen`: fachliche Sprache verwenden und produzieren
+- `reflexives_lernen`: das eigene Verstehen und Vorgehen bedenken
 
 ### Schritt 5: Wissensstruktur und Denkhandlung bestimmen
 Bestimme die dominante Wissensstruktur und die zugehörigen Denkhandlungen.
 
-Verfügbare Wissensstrukturen mit typischen Denkhandlungen:
+Verfügbare Wissensstrukturen mit typischen Denkhandlungen (exakte JSON-Werte in Backticks):
 
-- Begriffswissen → erkennen/wiedergeben, zuordnen/klassifizieren, erklären/erläutern
-- Kategorien- und Ordnungswissen → zuordnen/klassifizieren, strukturieren/darstellen
-- Prozesswissen → strukturieren/darstellen, erklären/erläutern, anwenden/übertragen
-- Ursache-Wirkungs-Wissen → erklären/erläutern, analysieren/untersuchen, anwenden/übertragen
-- Vergleichswissen → analysieren/untersuchen, strukturieren/darstellen, bewerten/beurteilen
-- Argumentationswissen → analysieren/untersuchen, bewerten/beurteilen, produzieren/gestalten
-- Quellen-, Text- und Interpretationswissen → analysieren/untersuchen, erklären/erläutern, bewerten/beurteilen
-- Regel- und Systemwissen → erkennen/wiedergeben, anwenden/übertragen, analysieren/untersuchen
-- prozedurales Wissen / Verfahren → strukturieren/darstellen, anwenden/übertragen, produzieren/gestalten
-- sprachliches Produktionswissen → produzieren/gestalten, strukturieren/darstellen, erklären/erläutern
-- Modell- und Darstellungswissen → strukturieren/darstellen, erklären/erläutern, analysieren/untersuchen
-- Bewertungs- und Urteilswissen → analysieren/untersuchen, bewerten/beurteilen, erklären/erläutern
+- `begriffswissen` → `erkennen_wiedergeben`, `zuordnen_klassifizieren`, `erklaeren_erlaeutern`
+- `kategorien_ordnungswissen` → `zuordnen_klassifizieren`, `strukturieren_darstellen`
+- `prozesswissen` → `strukturieren_darstellen`, `erklaeren_erlaeutern`, `anwenden_uebertragen`
+- `ursache_wirkungs_wissen` → `erklaeren_erlaeutern`, `analysieren_untersuchen`, `anwenden_uebertragen`
+- `vergleichswissen` → `analysieren_untersuchen`, `strukturieren_darstellen`, `bewerten_beurteilen`
+- `argumentationswissen` → `analysieren_untersuchen`, `bewerten_beurteilen`, `produzieren_gestalten`
+- `quellen_text_interpretationswissen` → `analysieren_untersuchen`, `erklaeren_erlaeutern`, `bewerten_beurteilen`
+- `regel_systemwissen` → `erkennen_wiedergeben`, `anwenden_uebertragen`, `analysieren_untersuchen`
+- `prozedurales_wissen` → `strukturieren_darstellen`, `anwenden_uebertragen`, `produzieren_gestalten`
+- `sprachliches_produktionswissen` → `produzieren_gestalten`, `strukturieren_darstellen`, `erklaeren_erlaeutern`
+- `modell_darstellungswissen` → `strukturieren_darstellen`, `erklaeren_erlaeutern`, `analysieren_untersuchen`
+- `bewertungs_urteilswissen` → `analysieren_untersuchen`, `bewerten_beurteilen`, `erklaeren_erlaeutern`
 
 ### Schritt 6: Komplexitätsstufe bestimmen
 Bestimme die primäre Komplexitätsstufe des Materials und den angemessenen Differenzierungsrahmen.
@@ -136,18 +136,18 @@ Differenzierungsrahmen pro Stufe:
     }
   ],
   "schritt_3_wissensformen": {
-    "primär": "<Wissensform>",
-    "sekundär": ["<Wissensform>"],
+    "primär": "<exakter Wert aus der Wissensformen-Liste, z.B. faktenwissen>",
+    "sekundär": ["<exakter Wert aus der Wissensformen-Liste>"],
     "begruendung": "<kurze Begründung>"
   },
   "schritt_4_lernform": {
-    "primär": "<Lernform>",
-    "sekundär": "<Lernform oder null>",
+    "primär": "<exakter Wert aus der Lernformen-Liste, z.B. verstehendes_lernen>",
+    "sekundär": "<exakter Wert aus der Lernformen-Liste oder null>",
     "begruendung": "<kurze Begründung>"
   },
   "schritt_5_wissensstruktur": {
-    "typ": "<Wissensstruktur>",
-    "denkhandlungen": ["<Denkhandlung 1>", "<Denkhandlung 2>"],
+    "typ": "<exakter Wert aus der Wissensstrukturen-Liste, z.B. prozesswissen>",
+    "denkhandlungen": ["<exakter Wert aus der Denkhandlungen-Liste>", "<exakter Wert>"],
     "begruendung": "<kurze Begründung>"
   },
   "schritt_6_komplexitaet": {
