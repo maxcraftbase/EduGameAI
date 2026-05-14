@@ -68,8 +68,7 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
   const [current, setCurrent] = useState(0)
   const [ergebnisse, setErgebnisse] = useState<AufgabenErgebnis[]>([])
   const [abgeschlossen, setAbgeschlossen] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [bereit, setBereit] = useState(false) // Weiter-Button sichtbar
+  const [bereit, setBereit] = useState(false)
 
   const aufgabe = aufgaben[current]
   const fortschritt = Math.round((current / aufgaben.length) * 100)
@@ -90,7 +89,6 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
 
   function weiter() {
     setBereit(false)
-    setSubmitting(false)
     if (current + 1 >= aufgaben.length) setAbgeschlossen(true)
     else setCurrent((c) => c + 1)
   }
@@ -209,7 +207,6 @@ export function GameEngine({ sessionId, aufgaben, gameSkin }: Props) {
           {current + 1 >= aufgaben.length ? 'Auswertung ansehen →' : 'Weiter →'}
         </button>
       )}
-      {submitting && <p className="text-xs text-muted-foreground text-center">Speichern…</p>}
     </div>
   )
 }
