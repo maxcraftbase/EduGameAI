@@ -7,6 +7,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
+  // Ownership sicherstellen: nur eigene Spiele
+  const { data: spiel } = await supabase
+    .from('games')
+    .select('id')
+    .eq('id', gameId)
+    .eq('lehrer_id', user.id)
+    .single()
+
+  if (!spiel) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
+
   const { data, error } = await supabase
     .from('lehrkraft_checks')
     .select('*')

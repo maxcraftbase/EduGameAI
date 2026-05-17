@@ -52,6 +52,10 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       const send = (data: Record<string, unknown>) => controller.enqueue(sseEvent(data))
 
+      // Außerhalb try — für Partial-Failure-Cleanup im catch sichtbar
+      let einheit: { id: string } | null = null
+      let spielIds: string[] = []
+
       try {
         const kontext = {
           fach: material.fach,
@@ -85,7 +89,7 @@ export async function POST(request: NextRequest) {
 
         // Einheit anlegen
         const einheitTitel = spielname?.trim() || `Einheit – ${new Date().toLocaleDateString('de-DE')}`
-        const { data: einheit, error: einheitError } = await supabase
+        const { data: einheitData, error: einheitError } = await supabase
           .from('einheiten')
           .insert({
             lehrer_id: user.id,
@@ -98,6 +102,9 @@ export async function POST(request: NextRequest) {
           .select()
           .single()
         if (einheitError) throw einheitError
+        if (!einheitData) throw new Error('Einheit konnte nicht erstellt werden')
+        einheit = einheitData
+        const einheitId = einheitData.id
 
         // ── Phase 2: Spielmapping einmal — N× generateGame ──────────────
         const erlaubteFormateArray: string[] | undefined = Array.isArray(erlaubteFormate) ? erlaubteFormate : undefined
@@ -111,7 +118,6 @@ export async function POST(request: NextRequest) {
         // 5 Vorschläge aus dem Mapping — für jedes Spiel einen anderen Rang
         const vorschlaege = [...spielmappingGlobal.vorschlaege].sort((a, b) => a.rang - b.rang)
 
-        const spielIds: string[] = []
         let erstesSpielId: string | null = null
         let erstesSpiel: SpielOutput | null = null
 
@@ -147,7 +153,7 @@ export async function POST(request: NextRequest) {
             .from('games')
             .insert({
               ...buildSpielRow(analyseRow.id, user.id, spiel, spielmappingFuerDiesesSpiel, spielTitel),
-              einheit_id: einheit.id,
+              einheit_id: einheitId,
               reihenfolge: i + 1,
             })
             .select()
@@ -163,7 +169,7 @@ export async function POST(request: NextRequest) {
         }
 
         send({ type: 'progress', label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 21 })
-        send({ type: 'done', einheitId: einheit.id, spielIds, analyseId: analyseRow.id })
+        send({ type: 'done', einheitId: einheitId, spielIds, analyseId: analyseRow.id })
 
         // Validierung des ersten Spiels — Stream bleibt offen damit Vercel die Funktion nicht killt
         if (erstesSpielId && erstesSpiel) {
@@ -182,6 +188,16 @@ export async function POST(request: NextRequest) {
         }
 
       } catch (err) {
+        // Einheit mit tatsächlich erstellter Spielanzahl updaten (Partial-Failure)
+        if (spielIds.length > 0 && einheit) {
+          try {
+            await supabase
+              .from('einheiten')
+              .update({ anzahl_spiele: spielIds.length, status: 'fehlerhaft' })
+              .eq('id', einheit.id)
+          } catch { /* ignore — best-effort cleanup */ }
+        }
+
         let message = 'Analyse fehlgeschlagen'
         if (err instanceof PipelineValidationError) message = `Validierungsfehler: ${err.message}`
         else if (err instanceof PipelineJsonError) message = `KI hat kein JSON zurückgegeben: ${err.schritt}`

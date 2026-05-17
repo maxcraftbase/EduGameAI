@@ -249,7 +249,7 @@ export default function GameErstellenPage() {
           <form onSubmit={onSubmitMetadata} className="flex flex-col gap-4">
             <div>
               <label style={labelStyle}>Spielname</label>
-              <input name="spielname" type="text" required placeholder="z.B. Fotosynthese – Klasse 9a" style={inputStyle} />
+              <input name="spielname" type="text" placeholder="z.B. Fotosynthese – Klasse 9a" style={inputStyle} />
               <p className="text-xs mt-1.5" style={{ color: '#7A6A94' }}>So findest du das Spiel später in deiner Übersicht.</p>
             </div>
 

@@ -132,6 +132,7 @@ export function LehrkraftCheckPanel({ spielId }: Props) {
     if (!polling) return
     let cancelled = false
     let attempts = 0
+    let timerId: ReturnType<typeof setTimeout> | null = null
     const MAX_ATTEMPTS = 40 // ~160 Sekunden, dann aufgeben
 
     async function poll() {
@@ -158,21 +159,21 @@ export function LehrkraftCheckPanel({ spielId }: Props) {
       try {
         const res = await fetch(`/api/games/${spielId}/check`)
         if (cancelled) return
-        if (res.status === 202) { setTimeout(poll, 4000); return }
+        if (res.status === 202) { timerId = setTimeout(poll, 4000); return }
         const body = await res.json()
         if (!body.pending && body.check) {
           setCheck(body.check)
           setPolling(false)
         } else {
-          setTimeout(poll, 4000)
+          timerId = setTimeout(poll, 4000)
         }
       } catch {
-        if (!cancelled) setTimeout(poll, 6000)
+        if (!cancelled) timerId = setTimeout(poll, 6000)
       }
     }
 
     poll()
-    return () => { cancelled = true }
+    return () => { cancelled = true; if (timerId !== null) clearTimeout(timerId) }
   }, [spielId, polling])
 
   function signoff() {

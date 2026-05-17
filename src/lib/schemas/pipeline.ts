@@ -347,6 +347,7 @@ export const ValidationOutputSchema = z.object({
       transparent_markiert: z.boolean(),
     })),
   }),
+  // schritt_19 existiert nicht — Schrittnummerierung in Prompt 05 springt absichtlich 18→20
   schritt_18_korrektheit: z.object({
     gesamtstatus: z.enum(['alle_korrekt', 'einzelprobleme', 'grundlegende_probleme']),
     probleme: z.array(z.object({
