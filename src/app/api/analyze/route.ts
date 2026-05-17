@@ -121,30 +121,35 @@ export async function POST(request: NextRequest) {
 
         send({ type: 'progress', label: `0 von ${anzahlSpieleGeklemmt} Spielen generiert …`, percent: 55, schrittIndex: 14 })
 
-        // Alle Spiele parallel generieren — spart N×30s auf ~30s konstant
-        // Progress-Update pro fertigem Spiel, damit der Bar sich bewegt
+        // Max. 3 parallele Claude-Calls — verhindert Rate-Limit-Fehler bei vielen Spielen
         let fertigeSpiele = 0
-        const spieleGeneriert = await Promise.all(
-          Array.from({ length: anzahlSpieleGeklemmt }, (_, i) => {
-            const vorschlag = vorschlaege[i % vorschlaege.length]
-            const spielmappingFuerDiesesSpiel: SpielmappingOutput = {
-              ...spielmappingGlobal,
-              ausgewaehlter_vorschlag_rang: vorschlag.rang,
-              auswahlbegruendung: vorschlag.passung_begruendung,
-            }
-            return generateGame({
-              analyse, lernziel, lernpfad,
-              spielmapping: spielmappingFuerDiesesSpiel,
-              kontext,
-              erlaubteFormate: erlaubteFormateArray,
-            }).then(spiel => {
-              fertigeSpiele++
-              const pct = 55 + Math.round((fertigeSpiele / anzahlSpieleGeklemmt) * 33)
-              send({ type: 'progress', label: `${fertigeSpiele} von ${anzahlSpieleGeklemmt} Spielen generiert …`, percent: pct, schrittIndex: 14 })
-              return { spiel, spielmapping: spielmappingFuerDiesesSpiel, index: i }
-            })
-          })
-        )
+        const CONCURRENCY = 3
+        const aufgaben = Array.from({ length: anzahlSpieleGeklemmt }, (_, i) => {
+          const vorschlag = vorschlaege[i % vorschlaege.length]
+          const spielmappingFuerDiesesSpiel: SpielmappingOutput = {
+            ...spielmappingGlobal,
+            ausgewaehlter_vorschlag_rang: vorschlag.rang,
+            auswahlbegruendung: vorschlag.passung_begruendung,
+          }
+          return { spielmapping: spielmappingFuerDiesesSpiel, index: i }
+        })
+
+        const spieleGeneriert: { spiel: SpielOutput; spielmapping: SpielmappingOutput; index: number }[] = []
+        for (let start = 0; start < aufgaben.length; start += CONCURRENCY) {
+          const batch = aufgaben.slice(start, start + CONCURRENCY)
+          const batchErgebnisse = await Promise.all(
+            batch.map(({ spielmapping: sm, index: i }) =>
+              generateGame({ analyse, lernziel, lernpfad, spielmapping: sm, kontext, erlaubteFormate: erlaubteFormateArray })
+                .then(spiel => {
+                  fertigeSpiele++
+                  const pct = 55 + Math.round((fertigeSpiele / anzahlSpieleGeklemmt) * 33)
+                  send({ type: 'progress', label: `${fertigeSpiele} von ${anzahlSpieleGeklemmt} Spielen generiert …`, percent: pct, schrittIndex: 14 })
+                  return { spiel, spielmapping: sm, index: i }
+                })
+            )
+          )
+          spieleGeneriert.push(...batchErgebnisse)
+        }
 
         send({ type: 'progress', label: 'Ergebnisse werden gespeichert …', percent: 88, schrittIndex: 21 })
 

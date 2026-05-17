@@ -75,6 +75,25 @@ function extractJson(text: string, schritt: string): unknown {
   }
 }
 
+// Retry bei 429/529 (Rate-Limit / Overload) — bis zu 3 Versuche mit Backoff
+async function callClaudeWithRetry(
+  schritt: string,
+  params: Parameters<Anthropic['messages']['create']>[0],
+  attempt = 1
+): Promise<Anthropic.Message> {
+  try {
+    return await getClient().messages.create(params) as Anthropic.Message
+  } catch (err: unknown) {
+    const status = (err as { status?: number })?.status
+    if ((status === 429 || status === 529) && attempt < 3) {
+      const delay = attempt * 15_000 // 15s, dann 30s
+      await new Promise(r => setTimeout(r, delay))
+      return callClaudeWithRetry(schritt, params, attempt + 1)
+    }
+    throw new PipelineApiError(schritt, err)
+  }
+}
+
 // Einzelner typisierter KI-Call mit Zod-Validierung
 async function callClaude<T>(
   schritt: string,
@@ -85,13 +104,14 @@ async function callClaude<T>(
 ): Promise<T> {
   let response
   try {
-    response = await getClient().messages.create({
+    response = await callClaudeWithRetry(schritt, {
       model: 'claude-sonnet-4-6',
       max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     })
   } catch (err) {
+    if (err instanceof PipelineApiError) throw err
     throw new PipelineApiError(schritt, err)
   }
 
