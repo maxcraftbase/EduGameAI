@@ -181,6 +181,7 @@ export async function runSpielMapping(input: {
   lernziel: LernzielOutput
   lernpfad: LernpfadOutput
   kontext: { fach: string; jahrgangsstufe: string; schulform: string; bundesland: string; zeitrahmenMinuten: number }
+  erlaubteFormate?: string[]
 }): Promise<SpielmappingOutput> {
   return callClaude(
     'Spielmapping (5 Vorschläge)',
@@ -196,6 +197,7 @@ export async function runSpielMapping(input: {
         bundesland: input.kontext.bundesland,
         zeitrahmen_minuten: input.kontext.zeitrahmenMinuten,
       },
+      erlaubte_formate: input.erlaubteFormate ?? null,
     }),
     SpielmappingOutputSchema
   )
@@ -208,6 +210,7 @@ export async function generateGame(input: {
   lernpfad: LernpfadOutput
   spielmapping: SpielmappingOutput
   kontext: { jahrgangsstufe: string; fach: string; zeitrahmenMinuten: number }
+  erlaubteFormate?: string[]
 }): Promise<SpielOutput> {
   return callClaude(
     'Spielgenerierung (Schritte 11–16)',
@@ -222,6 +225,7 @@ export async function generateGame(input: {
         fach: input.kontext.fach,
         zeitrahmen_minuten: input.kontext.zeitrahmenMinuten,
       },
+      erlaubte_formate: input.erlaubteFormate ?? null,
     }),
     SpielOutputSchema
   )
@@ -293,6 +297,7 @@ export async function runFullPipeline(input: {
     zeitrahmenMinuten: number
   }
   lernzielLehrkraft?: string
+  erlaubteFormate?: string[]
   onProgress?: (e: ProgressEvent) => void
 }): Promise<{
   analyse: AnalyseOutput
@@ -313,10 +318,10 @@ export async function runFullPipeline(input: {
   const lernpfad = await determineLernpfad({ analyse, lernziel, kontext: input.kontext })
 
   p?.({ label: 'Spielmapping wird erstellt …', percent: 55, schrittIndex: 12 })
-  const spielmapping = await runSpielMapping({ analyse, lernziel, lernpfad, kontext: input.kontext })
+  const spielmapping = await runSpielMapping({ analyse, lernziel, lernpfad, kontext: input.kontext, erlaubteFormate: input.erlaubteFormate })
 
   p?.({ label: 'Spiel wird generiert …', percent: 72, schrittIndex: 14 })
-  const spiel = await generateGame({ analyse, lernziel, lernpfad, spielmapping, kontext: input.kontext })
+  const spiel = await generateGame({ analyse, lernziel, lernpfad, spielmapping, kontext: input.kontext, erlaubteFormate: input.erlaubteFormate })
 
   p?.({ label: 'Wird geprüft …', percent: 88, schrittIndex: 17 })
   const check = await validateAndCheck({ analyse, lernziel, lernpfad, spielmapping, spiel, abschnitte: input.abschnitte })

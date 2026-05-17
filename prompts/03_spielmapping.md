@@ -148,6 +148,16 @@ Falls Rang 1 `mvp_ampel: "gelb"` oder `"rot"` hat: wähle den nächsten grünen 
 
 ---
 
+## Erlaubte Spielformate
+
+Wenn im Input `erlaubte_formate` angegeben ist (Array von Format-IDs), **dürfen ausschließlich diese Formate** in den Vorschlägen verwendet werden — weder für `game_engine` noch für `antwortformate`.
+
+Ist `erlaubte_formate` null oder fehlt das Feld, gelten alle Formate als erlaubt.
+
+Wähle innerhalb der Einschränkung immer noch nach didaktischer Passung.
+
+---
+
 ## Output-Format
 
 Antworte ausschließlich mit dem folgenden JSON-Objekt. Kein Text außerhalb.

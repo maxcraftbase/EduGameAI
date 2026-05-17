@@ -55,6 +55,20 @@ const inputStyle = {
 
 const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#1F1235' }
 
+const SPIELFORMATE = [
+  { id: 'single_choice',   label: 'Single Choice',   emoji: '☑️',  dauer: '1–2 Min',  zweck: 'Prüfen',    zweckFarbe: '#7C3AED' },
+  { id: 'multiple_choice', label: 'Multiple Choice', emoji: '✅',  dauer: '2–3 Min',  zweck: 'Prüfen',    zweckFarbe: '#7C3AED' },
+  { id: 'zuordnung',       label: 'Zuordnung',       emoji: '🔗',  dauer: '3–5 Min',  zweck: 'Festigen',  zweckFarbe: '#D97706' },
+  { id: 'reihenfolge',     label: 'Reihenfolge',     emoji: '🔢',  dauer: '3–5 Min',  zweck: 'Festigen',  zweckFarbe: '#D97706' },
+  { id: 'hangman',         label: 'Hangman',         emoji: '🔤',  dauer: '3–5 Min',  zweck: 'Vermitteln', zweckFarbe: '#059669' },
+  { id: 'space_invaders',  label: 'Space Invaders',  emoji: '🚀',  dauer: '5–8 Min',  zweck: 'Festigen',  zweckFarbe: '#D97706' },
+  { id: 'boss_fight',      label: 'Boss Fight',      emoji: '⚔️',  dauer: '5–8 Min',  zweck: 'Prüfen',    zweckFarbe: '#7C3AED' },
+  { id: 'sprint_quiz',     label: 'Sprint Quiz',     emoji: '🏃',  dauer: '3–5 Min',  zweck: 'Prüfen',    zweckFarbe: '#7C3AED' },
+  { id: 'escape_room',     label: 'Escape Room',     emoji: '🔐',  dauer: '8–12 Min', zweck: 'Festigen',  zweckFarbe: '#D97706' },
+]
+
+const ALLE_FORMAT_IDS = SPIELFORMATE.map(f => f.id)
+
 export default function GameErstellenPage() {
   const [step, setStep] = useState<Step>('upload')
   const [file, setFile] = useState<File | null>(null)
@@ -64,6 +78,15 @@ export default function GameErstellenPage() {
   const [analyseResult, setAnalyseResult] = useState<AnalyseResult | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [selectedFormate, setSelectedFormate] = useState<string[]>(ALLE_FORMAT_IDS)
+
+  function toggleFormat(id: string) {
+    setSelectedFormate(prev =>
+      prev.includes(id)
+        ? prev.length > 1 ? prev.filter(f => f !== id) : prev
+        : [...prev, id]
+    )
+  }
 
   const stepIndex = step === 'upload' ? 0 : step === 'metadata' ? 1 : step === 'analysing' ? 2 : step === 'result' ? 3 : 0
 
@@ -106,7 +129,7 @@ export default function GameErstellenPage() {
         const analyseRes = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ materialId: material.id, spielname: spielname || undefined, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen }),
+          body: JSON.stringify({ materialId: material.id, spielname: spielname || undefined, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen, erlaubteFormate: selectedFormate }),
         })
         if (!analyseRes.ok) {
           const body = await analyseRes.json().catch(() => ({}))
@@ -258,6 +281,41 @@ export default function GameErstellenPage() {
               </label>
               <input name="lernziel" type="text" placeholder="Die Schüler können… indem sie…" style={inputStyle} />
               <p className="text-xs mt-1.5" style={{ color: '#7A6A94' }}>Ohne Angabe formuliert die KI ein Lernziel aus dem Material.</p>
+            </div>
+
+            <div>
+              <label style={labelStyle}>
+                Spielformate <span style={{ color: '#7A6A94', fontWeight: 400 }}>(mindestens 1)</span>
+              </label>
+              <p className="text-xs mb-3" style={{ color: '#7A6A94' }}>
+                Die KI wählt nur aus den aktivierten Formaten. Deaktiviere Formate, die du nicht möchtest.
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {SPIELFORMATE.map(f => {
+                  const aktiv = selectedFormate.includes(f.id)
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => toggleFormat(f.id)}
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all"
+                      style={{
+                        border: aktiv ? '1.5px solid #7C3AED' : '1.5px solid #E9D5FF',
+                        background: aktiv ? '#F6F1FF' : '#FAFAFA',
+                      }}
+                    >
+                      <span className="text-lg w-6 text-center flex-shrink-0">{f.emoji}</span>
+                      <span className="font-semibold text-sm flex-1" style={{ color: '#1F1235' }}>{f.label}</span>
+                      <span className="text-xs" style={{ color: '#7A6A94' }}>{f.dauer}</span>
+                      <span className="text-xs font-semibold rounded-full px-2 py-0.5"
+                        style={{ background: `${f.zweckFarbe}18`, color: f.zweckFarbe }}>
+                        {f.zweck}
+                      </span>
+                      <span className="text-base flex-shrink-0">{aktiv ? '✓' : '○'}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             <button type="submit" disabled={isPending}

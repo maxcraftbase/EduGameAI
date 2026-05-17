@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
   const body = await request.json()
-  const { materialId, spielname, lernzielLehrkraft, zeitrahmenMinuten = 15 } = body
+  const { materialId, spielname, lernzielLehrkraft, zeitrahmenMinuten = 15, erlaubteFormate } = body
   if (!materialId) return NextResponse.json({ error: 'materialId fehlt' }, { status: 400 })
 
   const { data: material, error: materialError } = await supabase
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
             zeitrahmenMinuten,
           },
           lernzielLehrkraft,
+          erlaubteFormate: Array.isArray(erlaubteFormate) ? erlaubteFormate : undefined,
           onProgress: (e) => send({ type: 'progress', ...e }),
         })
 
