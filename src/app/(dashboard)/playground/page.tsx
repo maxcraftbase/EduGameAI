@@ -27,10 +27,7 @@ const BUNDESLAENDER = ['NRW', 'Bayern', 'Berlin', 'Hamburg', 'Hessen', 'Baden-WÃ
 
 interface AnalyseResult {
   spielId: string
-  result: {
-    lernziel: { schritt_7_lernziel: { original: string }; schritt_9_ampel: { farbe: string; lernziel_mvp_variante: string | null } }
-    check: { schritt_21_lehrkraft_check: { gesamtampel: 'gruen' | 'gelb' | 'rot'; lernziel_original: string; lernziel_mvp_variante: string | null; dimensionen: Record<string, unknown>; lernzielanteile: { vollstaendig_abgedeckt: string[]; teilweise_abgedeckt: string[]; nicht_abgedeckt: string[] }; hinweise_fuer_lehrkraft: string[]; spielfunktion: string; begruendung_anpassungen: string | null } }
-  }
+  analyseId: string
 }
 
 const STEPS_NAV = ['Material', 'Details', 'KI analysiert', 'Ergebnis']
@@ -156,7 +153,7 @@ export default function GameErstellenPage() {
             } else if (event.type === 'done') {
               setProgressPercent(100)
               setProgressSchrittIndex(ANALYSE_SCHRITTE.length)
-              setAnalyseResult({ spielId: event.spielId, result: event.result })
+              setAnalyseResult({ spielId: event.spielId, analyseId: event.analyseId })
               setStep('result')
             } else if (event.type === 'error') {
               throw new Error(event.message)
@@ -381,11 +378,7 @@ export default function GameErstellenPage() {
               </a>
             </div>
           </div>
-          <LehrkraftCheckPanel
-            spielId={analyseResult.spielId}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            check={analyseResult.result.check.schritt_21_lehrkraft_check as any}
-          />
+          <LehrkraftCheckPanel spielId={analyseResult.spielId} />
         </div>
       )}
 

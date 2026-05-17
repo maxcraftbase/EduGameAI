@@ -17,14 +17,13 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ i
 
   const { data: spiel } = await supabase
     .from('games')
-    .select('*, analyses(*), lehrkraft_checks(*)')
+    .select('*, analyses(*)')
     .eq('id', id)
     .eq('lehrer_id', user.id)
     .single()
 
   if (!spiel) notFound()
 
-  const check = Array.isArray(spiel.lehrkraft_checks) ? spiel.lehrkraft_checks[0] : spiel.lehrkraft_checks
   const aufgaben = (spiel.aufgaben ?? []) as Array<{ aufgabe_id: string; text: string; antwortformat: string; loesungen: string[] }>
 
   return (
@@ -91,21 +90,7 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ i
         </div>
 
         {/* Lehrkraft-Check */}
-        {check && (
-          <LehrkraftCheckPanel
-            spielId={id}
-            check={{
-              gesamtampel: check.gesamtampel,
-              lernziel_original: check.lernziel_original,
-              lernziel_mvp_variante: check.lernziel_mvp_variante,
-              dimensionen: check.dimensionen,
-              lernzielanteile: check.lernzielanteile,
-              hinweise_fuer_lehrkraft: check.hinweise_fuer_lehrkraft ?? [],
-              spielfunktion: check.spielfunktion,
-              begruendung_anpassungen: check.begruendung_anpassungen,
-            }}
-          />
-        )}
+        <LehrkraftCheckPanel spielId={id} />
       </div>
     </div>
   )

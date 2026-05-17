@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Ampel = 'gruen' | 'gelb' | 'rot'
@@ -38,7 +38,6 @@ interface LehrkraftCheckData {
 
 interface Props {
   spielId: string
-  check: LehrkraftCheckData
 }
 
 const AMPEL_FARBE: Record<Ampel, string> = {
@@ -82,10 +81,40 @@ const SPIELFUNKTION_LABEL: Record<string, string> = {
   teilueberpruefung: 'Teilüberprüfung',
 }
 
-export function LehrkraftCheckPanel({ spielId, check }: Props) {
+export function LehrkraftCheckPanel({ spielId }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [done, setDone] = useState(false)
+  const [check, setCheck] = useState<LehrkraftCheckData | null>(null)
+  const [polling, setPolling] = useState(true)
+
+  useEffect(() => {
+    if (!polling) return
+    let cancelled = false
+
+    async function poll() {
+      try {
+        const res = await fetch(`/api/games/${spielId}/check`)
+        if (cancelled) return
+        if (res.status === 202) {
+          setTimeout(poll, 4000)
+          return
+        }
+        const body = await res.json()
+        if (!body.pending && body.check) {
+          setCheck(body.check)
+          setPolling(false)
+        } else {
+          setTimeout(poll, 4000)
+        }
+      } catch {
+        if (!cancelled) setTimeout(poll, 6000)
+      }
+    }
+
+    poll()
+    return () => { cancelled = true }
+  }, [spielId, polling])
 
   function signoff() {
     startTransition(async () => {
@@ -95,6 +124,26 @@ export function LehrkraftCheckPanel({ spielId, check }: Props) {
         router.refresh()
       }
     })
+  }
+
+  if (!check) {
+    return (
+      <div className="border rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3 p-4 border-b bg-gray-50 text-gray-600">
+          <span className="w-3 h-3 rounded-full flex-shrink-0 bg-gray-300 animate-pulse" />
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Lehrkraft-Check</p>
+            <p className="text-xs opacity-70">Qualitätsprüfung läuft im Hintergrund …</p>
+          </div>
+        </div>
+        <div className="p-5">
+          <p className="text-sm text-muted-foreground">
+            Die KI prüft gerade die didaktische Qualität des Spiels. Das dauert noch einen Moment.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">Seite wird automatisch aktualisiert.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -141,7 +190,7 @@ export function LehrkraftCheckPanel({ spielId, check }: Props) {
                     {isBool
                       ? BOOL_ICON(val as boolean)
                       : isAmpel
-                      ? <span className={`inline-flex items-center gap-1`}>
+                      ? <span className="inline-flex items-center gap-1">
                           <span className={`w-2 h-2 rounded-full ${AMPEL_DOT[val as Ampel]}`} />
                           {val}
                         </span>
