@@ -10,6 +10,7 @@ import {
   SpielOutputSchema,
   ValidationOutputSchema,
   DiagnoseOutputSchema,
+  ImproveOutputSchema,
   type AnalyseOutput,
   type LernzielOutput,
   type LernpfadOutput,
@@ -17,6 +18,7 @@ import {
   type SpielOutput,
   type ValidationOutput,
   type DiagnoseOutput,
+  type ImproveOutput,
 } from '../schemas/pipeline'
 
 function getClient() {
@@ -288,6 +290,24 @@ export async function runDiagnosis(input: {
       ausgabemodus: input.modus,
     }),
     DiagnoseOutputSchema
+  )
+}
+
+// --- Spielverbesserung (Prompt 07) ----------------------------------
+export async function improveGame(input: {
+  aufgaben: unknown[]
+  check: unknown
+  kontext: { lernziel: string; fach: string; jahrgangsstufe: string; zusammenfassung: string }
+}): Promise<ImproveOutput> {
+  return callClaude(
+    'Spielverbesserung',
+    loadPrompt('07_game_improvement.md'),
+    JSON.stringify({
+      aufgaben: input.aufgaben,
+      check: input.check,
+      kontext: input.kontext,
+    }),
+    ImproveOutputSchema
   )
 }
 

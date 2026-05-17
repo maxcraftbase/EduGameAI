@@ -306,6 +306,31 @@ export const SpielOutputSchema = z.object({
 
 export type SpielOutput = z.infer<typeof SpielOutputSchema>
 
+// --- Schema: Spielverbesserung (Prompt 07) ---------------------------
+
+const VerbesserteAufgabeSchema = z.object({
+  aufgabe_id: z.string().min(1),
+  text: z.string().min(1),
+  antwortformat: AntwortformatSchema,
+  loesungen: z.array(z.string()).min(1),
+  distraktoren: z.array(z.string()),
+  hilfen: z.array(z.string()),
+  abschnitt_ref: z.string().min(1),
+  teilkompetenz: z.string().min(1),
+  komplexitaetsstufe: KomplexitaetsstufeSchema,
+})
+
+export const ImproveOutputSchema = z.object({
+  verbesserungen: z.array(z.object({
+    aufgabe_id: z.string().min(1),
+    aenderungen: z.array(z.string()),
+    aufgabe_neu: VerbesserteAufgabeSchema,
+  })).min(1),
+  gesamtbegruendung: z.string().min(1),
+})
+
+export type ImproveOutput = z.infer<typeof ImproveOutputSchema>
+
 // --- Schema 4: Validierung & Lehrkraft-Check (Prompt 04, Schritte 17–21) ---
 
 const CheckDimensionSchema = z.enum(['ok', 'warnung', 'problem'])
