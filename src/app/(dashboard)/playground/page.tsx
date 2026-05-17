@@ -153,6 +153,7 @@ export default function GameErstellenPage() {
         const reader = analyseRes.body!.getReader()
         const decoder = new TextDecoder()
         let buffer = ''
+        let streamAbgeschlossen = false
 
         while (true) {
           const { done, value } = await reader.read()
@@ -168,14 +169,20 @@ export default function GameErstellenPage() {
               setProgressPercent(event.percent)
               setProgressSchrittIndex(event.schrittIndex)
             } else if (event.type === 'done') {
+              streamAbgeschlossen = true
               setProgressPercent(100)
               setProgressSchrittIndex(ANALYSE_SCHRITTE.length)
               setAnalyseResult({ einheitId: event.einheitId, spielIds: event.spielIds, analyseId: event.analyseId })
               setStep('result')
             } else if (event.type === 'error') {
+              streamAbgeschlossen = true
               throw new Error(event.message)
             }
           }
+        }
+
+        if (!streamAbgeschlossen) {
+          throw new Error('Die Verbindung zur KI wurde unerwartet getrennt. Bitte erneut versuchen.')
         }
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : 'Unbekannter Fehler')
