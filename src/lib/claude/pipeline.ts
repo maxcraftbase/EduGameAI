@@ -244,7 +244,12 @@ export async function validateAndCheck(input: {
     'Validierung & Lehrkraft-Check (Schritte 17–21)',
     loadPrompt('05_validation_lehrkraft_check.md'),
     JSON.stringify({
-      analyse: input.analyse,
+      analyse: {
+        zusammenfassung: input.analyse.schritt_1_zusammenfassung,
+        kernaussagen: input.analyse.schritt_2_kernaussagen,
+        wissensstruktur: input.analyse.schritt_5_wissensstruktur,
+        komplexitaet: input.analyse.schritt_6_komplexitaet,
+      },
       lernziel: input.lernziel,
       lernpfad: lernpfadKurzfassung(input.lernpfad),
       spielmapping: {
@@ -256,7 +261,10 @@ export async function validateAndCheck(input: {
         ) ?? null,
       },
       spiel: input.spiel,
-      originalmaterial_abschnitte: input.abschnitte,
+      originalmaterial_abschnitte: input.abschnitte.map(a => ({
+        id: a.id,
+        text: a.text.slice(0, 300),
+      })),
     }),
     ValidationOutputSchema,
     16384
