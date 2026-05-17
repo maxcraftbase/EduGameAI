@@ -313,7 +313,6 @@ export async function runFullPipeline(input: {
   lernpfad: LernpfadOutput
   spielmapping: SpielmappingOutput
   spiel: SpielOutput
-  check: ValidationOutput
 }> {
   const p = input.onProgress
   p?.({ label: 'Material wird analysiert …', percent: 5, schrittIndex: 0 })
@@ -328,12 +327,9 @@ export async function runFullPipeline(input: {
   p?.({ label: 'Spielmapping wird erstellt …', percent: 55, schrittIndex: 12 })
   const spielmapping = await runSpielMapping({ analyse, lernziel, lernpfad, kontext: input.kontext, erlaubteFormate: input.erlaubteFormate })
 
-  p?.({ label: 'Spiel wird generiert …', percent: 72, schrittIndex: 14 })
+  p?.({ label: 'Spiel wird generiert …', percent: 85, schrittIndex: 14 })
   const spiel = await generateGame({ analyse, lernziel, lernpfad, spielmapping, kontext: input.kontext, erlaubteFormate: input.erlaubteFormate })
 
-  p?.({ label: 'Wird geprüft …', percent: 88, schrittIndex: 17 })
-  const check = await validateAndCheck({ analyse, lernziel, lernpfad, spielmapping, spiel, abschnitte: input.abschnitte })
-
   p?.({ label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 21 })
-  return { analyse, lernziel, lernpfad, spielmapping, spiel, check }
+  return { analyse, lernziel, lernpfad, spielmapping, spiel }
 }

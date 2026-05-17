@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runFullPipeline, PipelineValidationError, PipelineJsonError, PipelineApiError } from '@/lib/claude/pipeline'
+import { runFullPipeline, validateAndCheck, PipelineValidationError, PipelineJsonError, PipelineApiError } from '@/lib/claude/pipeline'
 import { createClient } from '@/lib/supabase/server'
 import type { AnalyseOutput, LernzielOutput, LernpfadOutput, SpielmappingOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
 
@@ -62,12 +62,23 @@ export async function POST(request: NextRequest) {
           .single()
         if (spielError) throw spielError
 
-        const { error: checkError } = await supabase
-          .from('lehrkraft_checks')
-          .insert(buildCheckRow(spiel.id, result.check))
-        if (checkError) throw checkError
-
+        // Spiel ist fertig — sofort done senden
         send({ type: 'done', analyseId: analyse.id, spielId: spiel.id, result })
+
+        // Validierung läuft still im Hintergrund weiter
+        validateAndCheck({
+          analyse: result.analyse,
+          lernziel: result.lernziel,
+          lernpfad: result.lernpfad,
+          spielmapping: result.spielmapping,
+          spiel: result.spiel,
+          abschnitte: material.abschnitte,
+        }).then((check) => {
+          return supabase.from('lehrkraft_checks').insert(buildCheckRow(spiel.id, check))
+        }).catch((err) => {
+          console.error('[analyze] Hintergrund-Validierung fehlgeschlagen:', err)
+        })
+
       } catch (err) {
         let message = 'Analyse fehlgeschlagen'
         if (err instanceof PipelineValidationError) message = `Validierungsfehler: ${err.message}`
