@@ -119,9 +119,11 @@ export async function POST(request: NextRequest) {
         // 5 Vorschläge aus dem Mapping — für jedes Spiel einen anderen Rang
         const vorschlaege = [...spielmappingGlobal.vorschlaege].sort((a, b) => a.rang - b.rang)
 
-        send({ type: 'progress', label: `${anzahlSpieleGeklemmt} Spiele werden parallel generiert …`, percent: 58, schrittIndex: 14 })
+        send({ type: 'progress', label: `0 von ${anzahlSpieleGeklemmt} Spielen generiert …`, percent: 55, schrittIndex: 14 })
 
         // Alle Spiele parallel generieren — spart N×30s auf ~30s konstant
+        // Progress-Update pro fertigem Spiel, damit der Bar sich bewegt
+        let fertigeSpiele = 0
         const spieleGeneriert = await Promise.all(
           Array.from({ length: anzahlSpieleGeklemmt }, (_, i) => {
             const vorschlag = vorschlaege[i % vorschlaege.length]
@@ -135,7 +137,12 @@ export async function POST(request: NextRequest) {
               spielmapping: spielmappingFuerDiesesSpiel,
               kontext,
               erlaubteFormate: erlaubteFormateArray,
-            }).then(spiel => ({ spiel, spielmapping: spielmappingFuerDiesesSpiel, index: i }))
+            }).then(spiel => {
+              fertigeSpiele++
+              const pct = 55 + Math.round((fertigeSpiele / anzahlSpieleGeklemmt) * 33)
+              send({ type: 'progress', label: `${fertigeSpiele} von ${anzahlSpieleGeklemmt} Spielen generiert …`, percent: pct, schrittIndex: 14 })
+              return { spiel, spielmapping: spielmappingFuerDiesesSpiel, index: i }
+            })
           })
         )
 
