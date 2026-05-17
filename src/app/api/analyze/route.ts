@@ -62,11 +62,11 @@ export async function POST(request: NextRequest) {
           .single()
         if (spielError) throw spielError
 
-        // Spiel ist fertig — sofort done senden
-        send({ type: 'done', analyseId: analyse.id, spielId: spiel.id, result })
+        // Spiel ist fertig — sofort done senden (nur IDs, kein großer Payload)
+        send({ type: 'done', analyseId: analyse.id, spielId: spiel.id })
 
-        // Validierung läuft still im Hintergrund weiter
-        validateAndCheck({
+        // Stream bleibt offen während Validierung läuft — verhindert vorzeitigen Funktionsabbruch
+        await validateAndCheck({
           analyse: result.analyse,
           lernziel: result.lernziel,
           lernpfad: result.lernpfad,
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         }).then((check) => {
           return supabase.from('lehrkraft_checks').insert(buildCheckRow(spiel.id, check))
         }).catch((err) => {
-          console.error('[analyze] Hintergrund-Validierung fehlgeschlagen:', err)
+          console.error('[analyze] Validierung fehlgeschlagen:', err)
         })
 
       } catch (err) {
