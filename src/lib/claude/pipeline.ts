@@ -243,7 +243,14 @@ export async function validateAndCheck(input: {
       analyse: input.analyse,
       lernziel: input.lernziel,
       lernpfad: lernpfadKurzfassung(input.lernpfad),
-      spielmapping: input.spielmapping,
+      spielmapping: {
+        lerngegenstand_kurz: input.spielmapping.lerngegenstand_kurz,
+        ausgewaehlter_vorschlag_rang: input.spielmapping.ausgewaehlter_vorschlag_rang,
+        auswahlbegruendung: input.spielmapping.auswahlbegruendung,
+        ausgewaehlter_vorschlag: input.spielmapping.vorschlaege.find(
+          v => v.rang === input.spielmapping.ausgewaehlter_vorschlag_rang
+        ) ?? null,
+      },
       spiel: input.spiel,
       originalmaterial_abschnitte: input.abschnitte,
     }),
