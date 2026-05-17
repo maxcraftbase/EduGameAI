@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     anzahlSpiele = 1,
   } = body
   if (!materialId) return NextResponse.json({ error: 'materialId fehlt' }, { status: 400 })
+  const anzahlSpieleGeklemmt = Math.min(Math.max(1, Number(anzahlSpiele) || 1), 5)
 
   const { data: material, error: materialError } = await supabase
     .from('materials')
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
             analyse_id: analyseRow.id,
             titel: einheitTitel,
             zeitrahmen_minuten: zeitrahmenMinuten,
-            anzahl_spiele: anzahlSpiele,
+            anzahl_spiele: anzahlSpieleGeklemmt,
           })
           .select()
           .single()
@@ -121,13 +122,13 @@ export async function POST(request: NextRequest) {
         let erstesSpielId: string | null = null
         let erstesSpiel: SpielOutput | null = null
 
-        for (let i = 0; i < anzahlSpiele; i++) {
+        for (let i = 0; i < anzahlSpieleGeklemmt; i++) {
           const basePercent = 55
-          const perSpiel = Math.floor(38 / anzahlSpiele)
+          const perSpiel = Math.floor(38 / anzahlSpieleGeklemmt)
           const spielPercent = basePercent + i * perSpiel
           send({
             type: 'progress',
-            label: `Spiel ${i + 1} von ${anzahlSpiele} wird generiert …`,
+            label: `Spiel ${i + 1} von ${anzahlSpieleGeklemmt} wird generiert …`,
             percent: spielPercent,
             schrittIndex: 14,
           })
