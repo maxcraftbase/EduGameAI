@@ -132,6 +132,24 @@ export async function determineLearningObjective(input: {
   )
 }
 
+// Kurzfassung des Lernpfads für downstream Claude-Calls:
+// Enthält alle Steuerungsfelder, aber keine ausführlichen Level-Details.
+// Verhindert aufgeblähte Inputs bei Spielmapping, Generierung und Validierung.
+function lernpfadKurzfassung(lp: LernpfadOutput) {
+  return {
+    lernpfad_typ: lp.lernpfad_typ,
+    lernpfad_beschreibung: lp.lernpfad_beschreibung,
+    empfohlene_phasen: lp.empfohlene_phasen,
+    empfohlene_spielfunktion: lp.empfohlene_spielfunktion,
+    lerninhalt_anteil: lp.lerninhalt_anteil,
+    spielerlebnis_anteil: lp.spielerlebnis_anteil,
+    begruendung: lp.begruendung,
+    besonderheiten: lp.besonderheiten ?? null,
+    zeitstrukturplan: lp.zeitstrukturplan,
+    spiele: lp.spiele.map(({ level: _lvl, ...s }) => s),
+  }
+}
+
 // --- Schritt 12–13: Didaktischer Lernpfad -------------------
 export async function determineLernpfad(input: {
   analyse: AnalyseOutput
@@ -152,7 +170,8 @@ export async function determineLernpfad(input: {
         zeitrahmen_minuten: input.kontext.zeitrahmenMinuten ?? null,
       },
     }),
-    LernpfadOutputSchema
+    LernpfadOutputSchema,
+    16384
   )
 }
 
@@ -169,7 +188,7 @@ export async function runSpielMapping(input: {
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
-      lernpfad: input.lernpfad,
+      lernpfad: lernpfadKurzfassung(input.lernpfad),
       kontext: {
         fach: input.kontext.fach,
         jahrgangsstufe: input.kontext.jahrgangsstufe,
@@ -196,7 +215,7 @@ export async function generateGame(input: {
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
-      lernpfad: input.lernpfad,
+      lernpfad: lernpfadKurzfassung(input.lernpfad),
       spielmapping: input.spielmapping,
       kontext: {
         jahrgangsstufe: input.kontext.jahrgangsstufe,
@@ -223,7 +242,7 @@ export async function validateAndCheck(input: {
     JSON.stringify({
       analyse: input.analyse,
       lernziel: input.lernziel,
-      lernpfad: input.lernpfad,
+      lernpfad: lernpfadKurzfassung(input.lernpfad),
       spielmapping: input.spielmapping,
       spiel: input.spiel,
       originalmaterial_abschnitte: input.abschnitte,
