@@ -26,8 +26,16 @@ const BUNDESLAENDER = ['NRW', 'Bayern', 'Berlin', 'Hamburg', 'Hessen', 'Baden-W�
   'Mecklenburg-Vorpommern', 'Rheinland-Pfalz', 'Saarland', 'Schleswig-Holstein', 'Bremen']
 
 interface AnalyseResult {
-  spielId: string
+  einheitId: string
+  spielIds: string[]
   analyseId: string
+}
+
+function getSpielRange(minuten: number): { min: number; max: number } {
+  if (minuten <= 10) return { min: 2, max: 4 }
+  if (minuten <= 20) return { min: 4, max: 6 }
+  if (minuten <= 35) return { min: 6, max: 9 }
+  return { min: 8, max: 12 }
 }
 
 const STEPS_NAV = ['Material', 'Details', 'KI analysiert', 'Ergebnis']
@@ -76,6 +84,15 @@ export default function GameErstellenPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [selectedFormate, setSelectedFormate] = useState<string[]>(ALLE_FORMAT_IDS)
+  const [zeitrahmenInput, setZeitrahmenInput] = useState(15)
+  const [anzahlSpiele, setAnzahlSpiele] = useState(4)
+
+  function onZeitrahmenChange(minuten: number) {
+    setZeitrahmenInput(minuten)
+    const range = getSpielRange(minuten)
+    // Aktuellen Wert in die neue Range klemmen
+    setAnzahlSpiele(prev => Math.min(Math.max(prev, range.min), range.max))
+  }
 
   function toggleFormat(id: string) {
     setSelectedFormate(prev =>
@@ -98,7 +115,7 @@ export default function GameErstellenPage() {
     const schulform = (form.elements.namedItem('schulform') as HTMLSelectElement).value
     const bundesland = (form.elements.namedItem('bundesland') as HTMLSelectElement).value
     const lernziel = (form.elements.namedItem('lernziel') as HTMLInputElement).value
-    const zeitrahmen = parseInt((form.elements.namedItem('zeitrahmen') as HTMLInputElement).value) || 15
+    const zeitrahmen = zeitrahmenInput
 
     // Sofort rendern — außerhalb der Transition
     setStep('analysing')
@@ -126,7 +143,7 @@ export default function GameErstellenPage() {
         const analyseRes = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ materialId: material.id, spielname: spielname || undefined, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen, erlaubteFormate: selectedFormate }),
+          body: JSON.stringify({ materialId: material.id, spielname: spielname || undefined, lernzielLehrkraft: lernziel || undefined, zeitrahmenMinuten: zeitrahmen, erlaubteFormate: selectedFormate, anzahlSpiele }),
         })
         if (!analyseRes.ok) {
           const body = await analyseRes.json().catch(() => ({}))
@@ -153,7 +170,7 @@ export default function GameErstellenPage() {
             } else if (event.type === 'done') {
               setProgressPercent(100)
               setProgressSchrittIndex(ANALYSE_SCHRITTE.length)
-              setAnalyseResult({ spielId: event.spielId, analyseId: event.analyseId })
+              setAnalyseResult({ einheitId: event.einheitId, spielIds: event.spielIds, analyseId: event.analyseId })
               setStep('result')
             } else if (event.type === 'error') {
               throw new Error(event.message)
@@ -269,7 +286,52 @@ export default function GameErstellenPage() {
 
             <div>
               <label style={labelStyle}>Zeitrahmen (Minuten)</label>
-              <input name="zeitrahmen" type="number" defaultValue={15} min={5} max={90} style={{ ...inputStyle, width: 120 }} />
+              <div className="flex items-center gap-3">
+                <input
+                  name="zeitrahmen"
+                  type="number"
+                  value={zeitrahmenInput}
+                  onChange={e => onZeitrahmenChange(parseInt(e.target.value) || 15)}
+                  min={5} max={90}
+                  style={{ ...inputStyle, width: 100 }}
+                />
+                <span className="text-xs" style={{ color: '#7A6A94' }}>
+                  {(() => { const r = getSpielRange(zeitrahmenInput); return `→ ${r.min}–${r.max} Spiele möglich` })()}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Anzahl Spiele</label>
+              <p className="text-xs mb-3" style={{ color: '#7A6A94' }}>
+                Jedes Spiel hat 4 Aufgaben in einem anderen Format.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(() => {
+                  const { min, max } = getSpielRange(zeitrahmenInput)
+                  return Array.from({ length: max - min + 1 }, (_, i) => min + i).map(n => {
+                    const aktiv = anzahlSpiele === n
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setAnzahlSpiele(n)}
+                        className="w-12 h-12 rounded-xl text-sm font-bold transition-all flex-shrink-0"
+                        style={{
+                          border: aktiv ? '2px solid #7C3AED' : '1.5px solid #E9D5FF',
+                          background: aktiv ? '#7C3AED' : '#FAFAFA',
+                          color: aktiv ? 'white' : '#7A6A94',
+                        }}
+                      >
+                        {n}
+                      </button>
+                    )
+                  })
+                })()}
+              </div>
+              <p className="text-xs mt-2" style={{ color: '#7A6A94' }}>
+                ≈ {anzahlSpiele * 3}–{anzahlSpiele * 5} Min. Spielzeit
+              </p>
             </div>
 
             <div>
@@ -371,14 +433,44 @@ export default function GameErstellenPage() {
             style={{ background: '#D1FAE5', border: '1px solid #6EE7B7' }}>
             <span className="text-2xl">🎉</span>
             <div>
-              <p className="text-sm font-bold" style={{ color: '#065F46' }}>Spiel erfolgreich erstellt!</p>
-              <a href={`/modules/${analyseResult.spielId}`}
-                className="text-xs font-medium" style={{ color: '#059669' }}>
-                → Zum Modul wechseln & freigeben
-              </a>
+              <p className="text-sm font-bold" style={{ color: '#065F46' }}>
+                {analyseResult.spielIds.length === 1
+                  ? 'Spiel erfolgreich erstellt!'
+                  : `${analyseResult.spielIds.length} Spiele erfolgreich erstellt!`}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: '#059669' }}>
+                Spiele einzeln freigeben, dann können Schüler spielen.
+              </p>
             </div>
           </div>
-          <LehrkraftCheckPanel spielId={analyseResult.spielId} />
+
+          {/* Spiele-Liste */}
+          <div style={{ ...cardStyle, padding: '16px 20px' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#7A6A94' }}>
+              Erstellte Spiele
+            </p>
+            <div className="flex flex-col gap-2">
+              {analyseResult.spielIds.map((id, i) => (
+                <a
+                  key={id}
+                  href={`/modules/${id}`}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all"
+                  style={{ background: '#F6F1FF', border: '1px solid #E9D5FF' }}
+                >
+                  <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: '#7C3AED', color: 'white' }}>
+                    {i + 1}
+                  </span>
+                  <span className="text-sm font-medium flex-1" style={{ color: '#1F1235' }}>
+                    Spiel {i + 1}
+                  </span>
+                  <span className="text-xs" style={{ color: '#7C3AED' }}>→ Freigeben</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <LehrkraftCheckPanel spielId={analyseResult.spielIds[0]} />
         </div>
       )}
 

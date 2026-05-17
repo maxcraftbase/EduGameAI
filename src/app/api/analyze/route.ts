@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runFullPipeline, validateAndCheck, PipelineValidationError, PipelineJsonError, PipelineApiError } from '@/lib/claude/pipeline'
+import {
+  analyzeMaterial,
+  determineLearningObjective,
+  determineLernpfad,
+  runSpielMapping,
+  generateGame,
+  validateAndCheck,
+  PipelineValidationError,
+  PipelineJsonError,
+  PipelineApiError,
+} from '@/lib/claude/pipeline'
 import { createClient } from '@/lib/supabase/server'
 import type { AnalyseOutput, LernzielOutput, LernpfadOutput, SpielmappingOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
 
@@ -14,7 +24,14 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
   const body = await request.json()
-  const { materialId, spielname, lernzielLehrkraft, zeitrahmenMinuten = 15, erlaubteFormate } = body
+  const {
+    materialId,
+    spielname,
+    lernzielLehrkraft,
+    zeitrahmenMinuten = 15,
+    erlaubteFormate,
+    anzahlSpiele = 1,
+  } = body
   if (!materialId) return NextResponse.json({ error: 'materialId fehlt' }, { status: 400 })
 
   const { data: material, error: materialError } = await supabase
@@ -33,51 +50,136 @@ export async function POST(request: NextRequest) {
       const send = (data: Record<string, unknown>) => controller.enqueue(sseEvent(data))
 
       try {
-        const result = await runFullPipeline({
+        const kontext = {
+          fach: material.fach,
+          jahrgangsstufe: material.jahrgangsstufe,
+          schulform: material.schulform,
+          bundesland: material.bundesland,
+          zeitrahmenMinuten,
+        }
+
+        // ── Phase 1: Analyse (einmalig) ─────────────────────────────────
+        send({ type: 'progress', label: 'Material wird analysiert …', percent: 5, schrittIndex: 0 })
+        const analyse = await analyzeMaterial({
           materialText: material.extrahierter_text,
           abschnitte: material.abschnitte,
-          kontext: {
-            fach: material.fach,
-            jahrgangsstufe: material.jahrgangsstufe,
-            schulform: material.schulform,
-            bundesland: material.bundesland,
-            zeitrahmenMinuten,
-          },
-          lernzielLehrkraft,
-          erlaubteFormate: Array.isArray(erlaubteFormate) ? erlaubteFormate : undefined,
-          onProgress: (e) => send({ type: 'progress', ...e }),
+          kontext,
         })
 
-        const { data: analyse, error: analyseError } = await supabase
+        send({ type: 'progress', label: 'Lernziel wird bestimmt …', percent: 20, schrittIndex: 6 })
+        const lernziel = await determineLearningObjective({ analyse, lernzielLehrkraft })
+
+        send({ type: 'progress', label: 'Lernpfad wird bestimmt …', percent: 32, schrittIndex: 11 })
+        const lernpfad = await determineLernpfad({ analyse, lernziel, kontext })
+
+        // Analyse in DB speichern (spielmapping kommt vom ersten Spiel)
+        const { data: analyseRow, error: analyseError } = await supabase
           .from('analyses')
-          .insert(buildAnalyseRow(materialId, result.analyse, result.lernziel, result.lernpfad, result.spielmapping))
+          .insert(buildAnalyseRow(materialId, analyse, lernziel, lernpfad))
           .select()
           .single()
         if (analyseError) throw analyseError
 
-        const { data: spiel, error: spielError } = await supabase
-          .from('games')
-          .insert(buildSpielRow(analyse.id, user.id, result.spiel, result.spielmapping, spielname))
+        // Einheit anlegen
+        const einheitTitel = spielname?.trim() || `Einheit – ${new Date().toLocaleDateString('de-DE')}`
+        const { data: einheit, error: einheitError } = await supabase
+          .from('einheiten')
+          .insert({
+            lehrer_id: user.id,
+            material_id: materialId,
+            analyse_id: analyseRow.id,
+            titel: einheitTitel,
+            zeitrahmen_minuten: zeitrahmenMinuten,
+            anzahl_spiele: anzahlSpiele,
+          })
           .select()
           .single()
-        if (spielError) throw spielError
+        if (einheitError) throw einheitError
 
-        // Spiel ist fertig — sofort done senden (nur IDs, kein großer Payload)
-        send({ type: 'done', analyseId: analyse.id, spielId: spiel.id })
+        // ── Phase 2: N Spiele generieren ────────────────────────────────
+        const spielIds: string[] = []
+        const verwendeteFormate: string[] = []
+        const erlaubteFormateArray: string[] | undefined = Array.isArray(erlaubteFormate) ? erlaubteFormate : undefined
 
-        // Stream bleibt offen während Validierung läuft — verhindert vorzeitigen Funktionsabbruch
-        await validateAndCheck({
-          analyse: result.analyse,
-          lernziel: result.lernziel,
-          lernpfad: result.lernpfad,
-          spielmapping: result.spielmapping,
-          spiel: result.spiel,
-          abschnitte: material.abschnitte,
-        }).then((check) => {
-          return supabase.from('lehrkraft_checks').insert(buildCheckRow(spiel.id, check))
-        }).catch((err) => {
-          console.error('[analyze] Validierung fehlgeschlagen:', err)
-        })
+        // Erstes Spielmapping + Spiel für spätere Validierung merken
+        let erstesSpielId: string | null = null
+        let erstesSpielmapping: SpielmappingOutput | null = null
+        let erstesSpiel: SpielOutput | null = null
+
+        for (let i = 0; i < anzahlSpiele; i++) {
+          const basePercent = 40
+          const perSpiel = Math.floor(50 / anzahlSpiele)
+          const spielPercent = basePercent + i * perSpiel
+          send({
+            type: 'progress',
+            label: `Spiel ${i + 1} von ${anzahlSpiele} wird erstellt …`,
+            percent: spielPercent,
+            schrittIndex: 12,
+          })
+
+          // Bereits verwendete Formate ausschließen für Abwechslung
+          let formateThisRound = erlaubteFormateArray
+          if (formateThisRound && verwendeteFormate.length > 0) {
+            const verbleibend = formateThisRound.filter(f => !verwendeteFormate.includes(f))
+            if (verbleibend.length > 0) formateThisRound = verbleibend
+          }
+
+          const spielmapping = await runSpielMapping({
+            analyse, lernziel, lernpfad, kontext,
+            erlaubteFormate: formateThisRound,
+          })
+
+          const spiel = await generateGame({
+            analyse, lernziel, lernpfad, spielmapping, kontext,
+            erlaubteFormate: formateThisRound,
+          })
+
+          // Verwendetes Format merken
+          const usedFormat = spielmapping.vorschlaege.find(
+            v => v.rang === spielmapping.ausgewaehlter_vorschlag_rang
+          )?.game_engine
+          if (usedFormat) verwendeteFormate.push(usedFormat)
+
+          const spielTitel = (i === 0 && spielname?.trim()) ? spielname.trim() : undefined
+
+          const { data: spielRow, error: spielError } = await supabase
+            .from('games')
+            .insert({
+              ...buildSpielRow(analyseRow.id, user.id, spiel, spielmapping, spielTitel),
+              einheit_id: einheit.id,
+              reihenfolge: i + 1,
+            })
+            .select()
+            .single()
+          if (spielError) throw spielError
+
+          spielIds.push(spielRow.id)
+
+          if (i === 0) {
+            erstesSpielId = spielRow.id
+            erstesSpielmapping = spielmapping
+            erstesSpiel = spiel
+          }
+        }
+
+        send({ type: 'progress', label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 21 })
+        send({ type: 'done', einheitId: einheit.id, spielIds, analyseId: analyseRow.id })
+
+        // Validierung des ersten Spiels — Stream bleibt offen damit Vercel die Funktion nicht killt
+        if (erstesSpielId && erstesSpielmapping && erstesSpiel) {
+          await validateAndCheck({
+            analyse,
+            lernziel,
+            lernpfad,
+            spielmapping: erstesSpielmapping,
+            spiel: erstesSpiel,
+            abschnitte: material.abschnitte,
+          }).then((check) => {
+            return supabase.from('lehrkraft_checks').insert(buildCheckRow(erstesSpielId!, check))
+          }).catch((err) => {
+            console.error('[analyze] Validierung fehlgeschlagen:', err)
+          })
+        }
 
       } catch (err) {
         let message = 'Analyse fehlgeschlagen'
@@ -110,7 +212,6 @@ function buildAnalyseRow(
   a: AnalyseOutput,
   l: LernzielOutput,
   lp: LernpfadOutput,
-  sm: SpielmappingOutput
 ) {
   return {
     material_id: materialId,
@@ -133,7 +234,6 @@ function buildAnalyseRow(
     spielfunktion: l.schritt_9_ampel.spielfunktion,
     abdeckung: l.schritt_9_ampel.abdeckung,
     lernpfad: lp,
-    spielmapping: sm,
   }
 }
 
@@ -154,7 +254,9 @@ function buildSpielRow(analyseId: string, lehrerId: string, s: SpielOutput, sm: 
   return {
     analyse_id: analyseId,
     lehrer_id: lehrerId,
-    titel: spielname?.trim() || (selectedVorschlag ? `${selectedVorschlag.name} – ${new Date().toLocaleDateString('de-DE')}` : `Spiel – ${new Date().toLocaleDateString('de-DE')}`),
+    titel: spielname || (selectedVorschlag
+      ? `${selectedVorschlag.name} – ${new Date().toLocaleDateString('de-DE')}`
+      : `Spiel – ${new Date().toLocaleDateString('de-DE')}`),
     spieltyp_didaktisch: s.schritt_13_spieltyp_didaktisch,
     game_engine: s.schritt_11_game_engine.engine_typ,
     game_skin: s.schritt_12_game_skin.altersstufe,
