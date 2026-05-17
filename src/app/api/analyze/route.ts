@@ -13,6 +13,9 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import type { AnalyseOutput, LernzielOutput, LernpfadOutput, SpielmappingOutput, SpielOutput, ValidationOutput } from '@/lib/schemas/pipeline'
 
+// Vercel: bis zu 5 Minuten für die Multi-Game-Pipeline erlauben
+export const maxDuration = 300
+
 const enc = new TextEncoder()
 function sseEvent(data: Record<string, unknown>) {
   return enc.encode(`data: ${JSON.stringify(data)}\n\n`)
@@ -96,56 +99,54 @@ export async function POST(request: NextRequest) {
           .single()
         if (einheitError) throw einheitError
 
-        // ── Phase 2: N Spiele generieren ────────────────────────────────
-        const spielIds: string[] = []
-        const verwendeteFormate: string[] = []
+        // ── Phase 2: Spielmapping einmal — N× generateGame ──────────────
         const erlaubteFormateArray: string[] | undefined = Array.isArray(erlaubteFormate) ? erlaubteFormate : undefined
 
-        // Erstes Spielmapping + Spiel für spätere Validierung merken
+        send({ type: 'progress', label: 'Spielkonzepte werden entwickelt …', percent: 42, schrittIndex: 12 })
+        const spielmappingGlobal = await runSpielMapping({
+          analyse, lernziel, lernpfad, kontext,
+          erlaubteFormate: erlaubteFormateArray,
+        })
+
+        // 5 Vorschläge aus dem Mapping — für jedes Spiel einen anderen Rang
+        const vorschlaege = [...spielmappingGlobal.vorschlaege].sort((a, b) => a.rang - b.rang)
+
+        const spielIds: string[] = []
         let erstesSpielId: string | null = null
-        let erstesSpielmapping: SpielmappingOutput | null = null
         let erstesSpiel: SpielOutput | null = null
 
         for (let i = 0; i < anzahlSpiele; i++) {
-          const basePercent = 40
-          const perSpiel = Math.floor(50 / anzahlSpiele)
+          const basePercent = 55
+          const perSpiel = Math.floor(38 / anzahlSpiele)
           const spielPercent = basePercent + i * perSpiel
           send({
             type: 'progress',
-            label: `Spiel ${i + 1} von ${anzahlSpiele} wird erstellt …`,
+            label: `Spiel ${i + 1} von ${anzahlSpiele} wird generiert …`,
             percent: spielPercent,
-            schrittIndex: 12,
+            schrittIndex: 14,
           })
 
-          // Bereits verwendete Formate ausschließen für Abwechslung
-          let formateThisRound = erlaubteFormateArray
-          if (formateThisRound && verwendeteFormate.length > 0) {
-            const verbleibend = formateThisRound.filter(f => !verwendeteFormate.includes(f))
-            if (verbleibend.length > 0) formateThisRound = verbleibend
+          // Jeden Rang reihum nutzen (1–5, dann wieder von vorn)
+          const vorschlag = vorschlaege[i % vorschlaege.length]
+          const spielmappingFuerDiesesSpiel: SpielmappingOutput = {
+            ...spielmappingGlobal,
+            ausgewaehlter_vorschlag_rang: vorschlag.rang,
+            auswahlbegruendung: vorschlag.passung_begruendung,
           }
 
-          const spielmapping = await runSpielMapping({
-            analyse, lernziel, lernpfad, kontext,
-            erlaubteFormate: formateThisRound,
-          })
-
           const spiel = await generateGame({
-            analyse, lernziel, lernpfad, spielmapping, kontext,
-            erlaubteFormate: formateThisRound,
+            analyse, lernziel, lernpfad,
+            spielmapping: spielmappingFuerDiesesSpiel,
+            kontext,
+            erlaubteFormate: erlaubteFormateArray,
           })
-
-          // Verwendetes Format merken
-          const usedFormat = spielmapping.vorschlaege.find(
-            v => v.rang === spielmapping.ausgewaehlter_vorschlag_rang
-          )?.game_engine
-          if (usedFormat) verwendeteFormate.push(usedFormat)
 
           const spielTitel = (i === 0 && spielname?.trim()) ? spielname.trim() : undefined
 
           const { data: spielRow, error: spielError } = await supabase
             .from('games')
             .insert({
-              ...buildSpielRow(analyseRow.id, user.id, spiel, spielmapping, spielTitel),
+              ...buildSpielRow(analyseRow.id, user.id, spiel, spielmappingFuerDiesesSpiel, spielTitel),
               einheit_id: einheit.id,
               reihenfolge: i + 1,
             })
@@ -157,7 +158,6 @@ export async function POST(request: NextRequest) {
 
           if (i === 0) {
             erstesSpielId = spielRow.id
-            erstesSpielmapping = spielmapping
             erstesSpiel = spiel
           }
         }
@@ -166,12 +166,12 @@ export async function POST(request: NextRequest) {
         send({ type: 'done', einheitId: einheit.id, spielIds, analyseId: analyseRow.id })
 
         // Validierung des ersten Spiels — Stream bleibt offen damit Vercel die Funktion nicht killt
-        if (erstesSpielId && erstesSpielmapping && erstesSpiel) {
+        if (erstesSpielId && erstesSpiel) {
           await validateAndCheck({
             analyse,
             lernziel,
             lernpfad,
-            spielmapping: erstesSpielmapping,
+            spielmapping: spielmappingGlobal,
             spiel: erstesSpiel,
             abschnitte: material.abschnitte,
           }).then((check) => {
