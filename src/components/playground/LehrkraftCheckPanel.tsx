@@ -19,6 +19,8 @@ interface Dimensionen {
   reduktion_markiert: DimStatus
   altersangemessen: DimStatus
   sourcemapping_vollstaendig: DimStatus
+  lernpfad_passung?: DimStatus
+  lerninhalt_spielerlebnis_balance?: DimStatus
 }
 
 interface LehrkraftCheckData {
@@ -94,6 +96,8 @@ const DIM_LABELS: Record<keyof Dimensionen, string> = {
   reduktion_markiert: 'Reduktion markiert',
   altersangemessen: 'Altersangemessen',
   sourcemapping_vollstaendig: 'Sourcemapping vollständig',
+  lernpfad_passung: 'Lernpfad-Passung',
+  lerninhalt_spielerlebnis_balance: 'Lerninhalt / Spielerlebnis',
 }
 
 const SPIELFUNKTION_LABEL: Record<string, string> = {
@@ -118,6 +122,7 @@ export function LehrkraftCheckPanel({ spielId }: Props) {
   // Verbesserungs-State
   const [improving, setImproving] = useState(false)
   const [improveResult, setImproveResult] = useState<ImproveResult | null>(null)
+  const [originalAufgaben, setOriginalAufgaben] = useState<VerbesserteAufgabe[] | null>(null)
   const [improveError, setImproveError] = useState<string | null>(null)
   const [angenommen, setAngenommen] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState(false)
@@ -126,8 +131,30 @@ export function LehrkraftCheckPanel({ spielId }: Props) {
   useEffect(() => {
     if (!polling) return
     let cancelled = false
+    let attempts = 0
+    const MAX_ATTEMPTS = 40 // ~160 Sekunden, dann aufgeben
 
     async function poll() {
+      if (cancelled) return
+      attempts++
+
+      if (attempts > MAX_ATTEMPTS) {
+        if (!cancelled) {
+          setCheck({
+            gesamtampel: 'gelb',
+            lernziel_original: '—',
+            lernziel_mvp_variante: null,
+            dimensionen: {} as Dimensionen,
+            lernzielanteile: { vollstaendig_abgedeckt: [], teilweise_abgedeckt: [], nicht_abgedeckt: [] },
+            hinweise_fuer_lehrkraft: ['Qualitätsprüfung konnte nicht abgeschlossen werden. Das Spiel ist trotzdem spielbar.'],
+            spielfunktion: 'sicherung',
+            begruendung_anpassungen: null,
+          })
+          setPolling(false)
+        }
+        return
+      }
+
       try {
         const res = await fetch(`/api/games/${spielId}/check`)
         if (cancelled) return
@@ -161,11 +188,16 @@ export function LehrkraftCheckPanel({ spielId }: Props) {
     setImproveResult(null)
     setSaved(false)
     try {
+      // Original-Aufgaben laden, damit wir beim Speichern mergen können
+      const gameRes = await fetch(`/api/games/${spielId}`)
+      const gameBody = await gameRes.json()
+      if (!gameRes.ok) throw new Error('Spiel konnte nicht geladen werden')
+      setOriginalAufgaben(gameBody.aufgaben ?? [])
+
       const res = await fetch(`/api/games/${spielId}/improve`, { method: 'POST' })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error ?? 'Fehler')
       setImproveResult(body)
-      // Alle Verbesserungen die echte Änderungen haben standardmäßig annehmen
       const init: Record<string, boolean> = {}
       for (const v of body.verbesserungen) {
         init[v.aufgabe_id] = v.aenderungen.length > 0
@@ -179,13 +211,14 @@ export function LehrkraftCheckPanel({ spielId }: Props) {
   }
 
   async function saveImprovements() {
-    if (!improveResult) return
+    if (!improveResult || !originalAufgaben) return
     setSaving(true)
     try {
-      // Nur angenommene Aufgaben ersetzen
-      const aufgabenNeu = improveResult.verbesserungen
-        .filter(v => angenommen[v.aufgabe_id])
-        .map(v => v.aufgabe_neu)
+      // Original-Aufgaben beibehalten, nur angenommene ersetzen
+      const aufgabenNeu = originalAufgaben.map(orig => {
+        const v = improveResult.verbesserungen.find(v => v.aufgabe_id === orig.aufgabe_id)
+        return (v && angenommen[v.aufgabe_id]) ? v.aufgabe_neu : orig
+      })
 
       const res = await fetch(`/api/games/${spielId}`, {
         method: 'PATCH',
@@ -195,6 +228,7 @@ export function LehrkraftCheckPanel({ spielId }: Props) {
       if (!res.ok) throw new Error('Speichern fehlgeschlagen')
       setSaved(true)
       setImproveResult(null)
+      setOriginalAufgaben(null)
       router.refresh()
     } catch (err) {
       setImproveError(err instanceof Error ? err.message : 'Speicherfehler')

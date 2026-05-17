@@ -8,10 +8,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
-  // Spiel laden
+  // Spiel laden — inkl. Analyse und Material für fach/jahrgangsstufe
   const { data: spiel, error: spielError } = await supabase
     .from('games')
-    .select('*, analyses(*)')
+    .select('*, analyses(*, materials(fach, jahrgangsstufe))')
     .eq('id', gameId)
     .eq('lehrer_id', user.id)
     .single()
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const analyse = spiel.analyses
+  const material = analyse?.materials
 
   try {
     const result = await improveGame({
@@ -44,8 +45,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
       kontext: {
         lernziel: analyse?.lernziel_original ?? '',
-        fach: analyse?.fach ?? '',
-        jahrgangsstufe: analyse?.jahrgangsstufe ?? '',
+        fach: material?.fach ?? '',
+        jahrgangsstufe: material?.jahrgangsstufe ?? '',
         zusammenfassung: analyse?.zusammenfassung ?? '',
       },
     })

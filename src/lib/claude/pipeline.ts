@@ -21,8 +21,14 @@ import {
   type ImproveOutput,
 } from '../schemas/pipeline'
 
+let _client: Anthropic | null = null
 function getClient() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+  if (!_client) {
+    const key = process.env.ANTHROPIC_API_KEY
+    if (!key) throw new Error('ANTHROPIC_API_KEY ist nicht gesetzt')
+    _client = new Anthropic({ apiKey: key })
+  }
+  return _client
 }
 
 // Fehlertypen für die Pipeline
@@ -312,44 +318,3 @@ export async function improveGame(input: {
 }
 
 export type ProgressEvent = { label: string; percent: number; schrittIndex: number }
-
-// --- Vollständige Pipeline (mit Lernpfad + Spielmapping) -----
-export async function runFullPipeline(input: {
-  materialText: string
-  abschnitte: { id: string; text: string }[]
-  kontext: {
-    fach: string
-    jahrgangsstufe: string
-    schulform: string
-    bundesland: string
-    zeitrahmenMinuten: number
-  }
-  lernzielLehrkraft?: string
-  erlaubteFormate?: string[]
-  onProgress?: (e: ProgressEvent) => void
-}): Promise<{
-  analyse: AnalyseOutput
-  lernziel: LernzielOutput
-  lernpfad: LernpfadOutput
-  spielmapping: SpielmappingOutput
-  spiel: SpielOutput
-}> {
-  const p = input.onProgress
-  p?.({ label: 'Material wird analysiert …', percent: 5, schrittIndex: 0 })
-  const analyse = await analyzeMaterial(input)
-
-  p?.({ label: 'Lernziel wird bestimmt …', percent: 25, schrittIndex: 6 })
-  const lernziel = await determineLearningObjective({ analyse, lernzielLehrkraft: input.lernzielLehrkraft })
-
-  p?.({ label: 'Lernpfad wird bestimmt …', percent: 38, schrittIndex: 11 })
-  const lernpfad = await determineLernpfad({ analyse, lernziel, kontext: input.kontext })
-
-  p?.({ label: 'Spielmapping wird erstellt …', percent: 55, schrittIndex: 12 })
-  const spielmapping = await runSpielMapping({ analyse, lernziel, lernpfad, kontext: input.kontext, erlaubteFormate: input.erlaubteFormate })
-
-  p?.({ label: 'Spiel wird generiert …', percent: 85, schrittIndex: 14 })
-  const spiel = await generateGame({ analyse, lernziel, lernpfad, spielmapping, kontext: input.kontext, erlaubteFormate: input.erlaubteFormate })
-
-  p?.({ label: 'Ergebnisse werden gespeichert …', percent: 95, schrittIndex: 21 })
-  return { analyse, lernziel, lernpfad, spielmapping, spiel }
-}
