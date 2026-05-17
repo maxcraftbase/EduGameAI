@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     anzahlSpiele = 1,
   } = body
   if (!materialId) return NextResponse.json({ error: 'materialId fehlt' }, { status: 400 })
-  const anzahlSpieleGeklemmt = Math.min(Math.max(1, Number(anzahlSpiele) || 1), 5)
+  const anzahlSpieleGeklemmt = Math.min(Math.max(1, Number(anzahlSpiele) || 1), 12)
 
   const { data: material, error: materialError } = await supabase
     .from('materials')
@@ -119,41 +119,37 @@ export async function POST(request: NextRequest) {
         // 5 Vorschläge aus dem Mapping — für jedes Spiel einen anderen Rang
         const vorschlaege = [...spielmappingGlobal.vorschlaege].sort((a, b) => a.rang - b.rang)
 
+        send({ type: 'progress', label: `${anzahlSpieleGeklemmt} Spiele werden parallel generiert …`, percent: 58, schrittIndex: 14 })
+
+        // Alle Spiele parallel generieren — spart N×30s auf ~30s konstant
+        const spieleGeneriert = await Promise.all(
+          Array.from({ length: anzahlSpieleGeklemmt }, (_, i) => {
+            const vorschlag = vorschlaege[i % vorschlaege.length]
+            const spielmappingFuerDiesesSpiel: SpielmappingOutput = {
+              ...spielmappingGlobal,
+              ausgewaehlter_vorschlag_rang: vorschlag.rang,
+              auswahlbegruendung: vorschlag.passung_begruendung,
+            }
+            return generateGame({
+              analyse, lernziel, lernpfad,
+              spielmapping: spielmappingFuerDiesesSpiel,
+              kontext,
+              erlaubteFormate: erlaubteFormateArray,
+            }).then(spiel => ({ spiel, spielmapping: spielmappingFuerDiesesSpiel, index: i }))
+          })
+        )
+
+        send({ type: 'progress', label: 'Ergebnisse werden gespeichert …', percent: 88, schrittIndex: 21 })
+
         let erstesSpielId: string | null = null
         let erstesSpiel: SpielOutput | null = null
 
-        for (let i = 0; i < anzahlSpieleGeklemmt; i++) {
-          const basePercent = 55
-          const perSpiel = Math.floor(38 / anzahlSpieleGeklemmt)
-          const spielPercent = basePercent + i * perSpiel
-          send({
-            type: 'progress',
-            label: `Spiel ${i + 1} von ${anzahlSpieleGeklemmt} wird generiert …`,
-            percent: spielPercent,
-            schrittIndex: 14,
-          })
-
-          // Jeden Rang reihum nutzen (1–5, dann wieder von vorn)
-          const vorschlag = vorschlaege[i % vorschlaege.length]
-          const spielmappingFuerDiesesSpiel: SpielmappingOutput = {
-            ...spielmappingGlobal,
-            ausgewaehlter_vorschlag_rang: vorschlag.rang,
-            auswahlbegruendung: vorschlag.passung_begruendung,
-          }
-
-          const spiel = await generateGame({
-            analyse, lernziel, lernpfad,
-            spielmapping: spielmappingFuerDiesesSpiel,
-            kontext,
-            erlaubteFormate: erlaubteFormateArray,
-          })
-
+        for (const { spiel, spielmapping: sm, index: i } of spieleGeneriert) {
           const spielTitel = (i === 0 && spielname?.trim()) ? spielname.trim() : undefined
-
           const { data: spielRow, error: spielError } = await supabase
             .from('games')
             .insert({
-              ...buildSpielRow(analyseRow.id, user.id, spiel, spielmappingFuerDiesesSpiel, spielTitel),
+              ...buildSpielRow(analyseRow.id, user.id, spiel, sm, spielTitel),
               einheit_id: einheitId,
               reihenfolge: i + 1,
             })

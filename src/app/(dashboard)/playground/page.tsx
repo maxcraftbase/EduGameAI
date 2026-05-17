@@ -32,10 +32,10 @@ interface AnalyseResult {
 }
 
 function getSpielRange(minuten: number): { min: number; max: number } {
-  if (minuten <= 10) return { min: 1, max: 2 }
-  if (minuten <= 20) return { min: 2, max: 3 }
-  if (minuten <= 35) return { min: 3, max: 4 }
-  return { min: 4, max: 5 }
+  if (minuten <= 10) return { min: 2, max: 4 }
+  if (minuten <= 20) return { min: 4, max: 6 }
+  if (minuten <= 35) return { min: 6, max: 9 }
+  return { min: 8, max: 12 }
 }
 
 const STEPS_NAV = ['Material', 'Details', 'KI analysiert', 'Ergebnis']
